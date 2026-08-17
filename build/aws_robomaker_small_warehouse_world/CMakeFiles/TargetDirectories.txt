@@ -1,9 +1,0 @@
-/home/ambushee/wil_project/aws-robomaker-small-warehouse-world/build/aws_robomaker_small_warehouse_world/CMakeFiles/uninstall.dir
-/home/ambushee/wil_project/aws-robomaker-small-warehouse-world/build/aws_robomaker_small_warehouse_world/CMakeFiles/aws_robomaker_small_warehouse_world_uninstall.dir
-/home/ambushee/wil_project/aws-robomaker-small-warehouse-world/build/aws_robomaker_small_warehouse_world/CMakeFiles/test.dir
-/home/ambushee/wil_project/aws-robomaker-small-warehouse-world/build/aws_robomaker_small_warehouse_world/CMakeFiles/edit_cache.dir
-/home/ambushee/wil_project/aws-robomaker-small-warehouse-world/build/aws_robomaker_small_warehouse_world/CMakeFiles/rebuild_cache.dir
-/home/ambushee/wil_project/aws-robomaker-small-warehouse-world/build/aws_robomaker_small_warehouse_world/CMakeFiles/list_install_components.dir
-/home/ambushee/wil_project/aws-robomaker-small-warehouse-world/build/aws_robomaker_small_warehouse_world/CMakeFiles/install.dir
-/home/ambushee/wil_project/aws-robomaker-small-warehouse-world/build/aws_robomaker_small_warehouse_world/CMakeFiles/install/local.dir
-/home/ambushee/wil_project/aws-robomaker-small-warehouse-world/build/aws_robomaker_small_warehouse_world/CMakeFiles/install/strip.dir
