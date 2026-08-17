@@ -258,7 +258,41 @@
   <link name="cam0_depth">
     <visual>
       <geometry>
-        <box size="0.028 0.028 0.028"/> 
+        <box size="0.028 0.028 0.028"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 0.8 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.028 0.028 0.028"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- cam1: cam0's stereo partner, 93.6 mm to its right. See cam1_joint. -->
+  <link name="cam1">
+    <visual>
+      <geometry>
+        <box size="0.02 0.02 0.02"/>
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 0.8 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.02 0.02 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- cam1_undis -->
+  <link name="cam1_undis">
+    <visual>
+      <geometry>
+        <box size="0.028 0.028 0.028"/>
       </geometry>
       <material name="green">
         <color rgba="0 0.8 0 1"/>
@@ -374,6 +408,25 @@
     <origin xyz="0 0 0" rpy="-1.5707963268 0 -1.5707963268"/>
   </joint>
 
+  <!-- cam1 Joint.
+       Baseline 0.0936 m, taken from the real rig's calibrated 93.598 mm
+       (vins_fusion_ros2/config/wil/stereo_imu.yaml, body_T_cam1) so simulated
+       and hardware geometry agree. The calibration puts cam1 on cam0's optical
+       +X, which is the robot's right, hence the negative y in this y-left
+       frame. -->
+  <joint name="cam1_joint" type="fixed">
+    <parent link="cam0"/>
+    <child link="cam1"/>
+    <origin xyz="0 -0.0936 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- cam1_undis Joint -->
+  <joint name="cam1_undis_joint" type="fixed">
+    <parent link="cam1"/>
+    <child link="cam1_undis"/>
+    <origin xyz="0 0 0" rpy="-1.5707963268 0 -1.5707963268"/>
+  </joint>
+
   <!-- Gazebo-specific elements -->
   <gazebo reference="base_link">
     <material>Gazebo/Blue</material>
@@ -413,6 +466,141 @@
 
   <gazebo reference="imu_link">
     <material>Gazebo/Green</material>
+  </gazebo>
+
+  <!--
+    SENSORS.
+
+    Kept in sync by hand with models/ackermann_robot/model.sdf, which is what the
+    simulation actually loads (small_warehouse.world includes it via
+    model://ackermann_robot). Editing this file alone changes nothing at runtime.
+    They live here so `ign sdf -p` regeneration reproduces them rather than
+    silently dropping them; see the header comment in model.sdf.
+
+    Unlike the Gazebo/Blue material stubs above, these are Fortress-targeted, not
+    Gazebo Classic: the plugin-free <sensor> form is what gz-sim 6 expects, and
+    the topics are bridged to ROS by the package's launch files. The full
+    rationale for every number is in model.sdf; the short version:
+      - Ideal pinhole, because Fortress ships no wide-angle camera. 90 deg
+        horizontal FOV at 1280 px gives fx = fy = 640, cx = 640, cy = 360, which
+        is what vins_fusion_ros2/config/wil_sim/cam0_pinhole.yaml declares.
+      - IMU noise <stddev> is a per-sample figure: the ADIS16448 densities times
+        sqrt(200 Hz).
+    Requires ignition-gazebo-sensors-system and ignition-gazebo-imu-system in the
+    world.
+  -->
+  <gazebo reference="cam0">
+    <sensor name="cam0" type="camera">
+      <topic>cam0/image_raw</topic>
+      <update_rate>20</update_rate>
+      <always_on>1</always_on>
+      <visualize>0</visualize>
+      <camera>
+        <horizontal_fov>1.5707963268</horizontal_fov>
+        <image>
+          <width>1280</width>
+          <height>720</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>100</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0</mean>
+          <stddev>0.005</stddev>
+        </noise>
+      </camera>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="cam1">
+    <sensor name="cam1" type="camera">
+      <topic>cam1/image_raw</topic>
+      <update_rate>20</update_rate>
+      <always_on>1</always_on>
+      <visualize>0</visualize>
+      <camera>
+        <horizontal_fov>1.5707963268</horizontal_fov>
+        <image>
+          <width>1280</width>
+          <height>720</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>100</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0</mean>
+          <stddev>0.005</stddev>
+        </noise>
+      </camera>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="imu_link">
+    <sensor name="imu" type="imu">
+      <topic>imu</topic>
+      <update_rate>200</update_rate>
+      <always_on>1</always_on>
+      <imu>
+        <angular_velocity>
+          <x>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.0048</stddev>
+              <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+              <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.0048</stddev>
+              <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+              <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.0048</stddev>
+              <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+              <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.0566</stddev>
+              <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+              <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.0566</stddev>
+              <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+              <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.0566</stddev>
+              <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+              <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
   </gazebo>
   
 </robot>

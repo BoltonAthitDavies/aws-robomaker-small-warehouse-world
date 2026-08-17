@@ -1,16 +1,23 @@
 <?xml version="1.0" ?>
 <!--
   Generated from urdf/ackermann_robot.urdf via `ign sdf -p`, then edited.
-  Regenerate with that command if the URDF changes; the three edits are:
+  Regenerate with that command if the URDF changes; the four edits are:
     1. Gazebo Classic <script>Gazebo/Blue</script> material blocks removed.
     2. Converter float noise collapsed.
     3. AckermannSteering system added (see the comment near the bottom).
+    4. IMU and stereo camera <sensor> elements added, plus the cam1 / cam1_undis
+       frames and the cam1 visual+collision they need. The URDF carries matching
+       definitions, but a regeneration will still need checking against them:
+       cam1 is a hand-placed stereo partner, not converter output.
 
   Link layout note: every fixed-joint child (base_link, imu_link, cam_link1,
   cam_link2, cam0, cam0_undis, cam0_depth) is lumped into base_footprint by the
   URDF converter, which is exactly what Gazebo does when spawning the URDF
   directly. Their frames survive as <frame> elements at the end of the file.
+  Sensors therefore hang off base_footprint and locate themselves with
+  <pose relative_to='...'> against those surviving frames.
 -->
+
 <sdf version='1.9'>
   <model name='ackermann_robot'>
     <link name='base_footprint'>
@@ -60,6 +67,17 @@
       </collision>
       <collision name='base_footprint_fixed_joint_lump__cam0_collision_3'>
         <pose>0.496 0 0.4395 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <!-- Hand-added, not converter output: the stereo partner for cam0, one
+           calibrated baseline (93.6 mm) along cam0's optical +X, which is the
+           robot's right, i.e. base -Y. -->
+      <collision name='cam1_collision'>
+        <pose>0.496 -0.0936 0.4395 0 0 0</pose>
         <geometry>
           <box>
             <size>0.02 0.02 0.02</size>
@@ -146,6 +164,18 @@
           <ambient>0 0 1 1</ambient>
         </material>
       </visual>
+      <visual name='cam1_visual'>
+        <pose>0.496 -0.0936 0.4395 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+          <ambient>0 0 1 1</ambient>
+        </material>
+      </visual>
       <visual name='base_footprint_fixed_joint_lump__cam0_depth_visual_4'>
         <pose>0.496 0 0.4395 -1.5707963268 0 -1.5707963268</pose>
         <geometry>
@@ -182,6 +212,172 @@
           <ambient>0 1 0 1</ambient>
         </material>
       </visual>
+
+      <!--
+        SENSORS. These feed VINS-Fusion via
+        vins_fusion_ros2/config/wil_sim/stereo_imu.yaml; the ros_gz_bridge that
+        puts them on ROS topics lives in launch/small_warehouse.launch.py.
+
+        They attach to base_footprint because it is the only link left after the
+        URDF converter's lumping (see the header note); the pose is what places
+        them, not the parent link.
+
+        Requires ignition-gazebo-sensors-system (cameras) and
+        ignition-gazebo-imu-system (IMU) in the world. Both worlds in this
+        package declare them.
+      -->
+
+      <!--
+        Attached to 'cam0', NOT 'cam0_undis'. A gz camera sensor looks down its
+        own +X axis, so it wants the x-forward frame. cam0_undis / cam0_depth are
+        ROS optical frames (x-right, y-down, z-forward) and would aim the camera
+        out the robot's right side.
+
+        Ideal pinhole: Fortress ships no wide-angle camera implementation
+        (there is no libignition-sensors6-wideangle_camera.so), so the real rig's
+        ~180 deg KANNALA_BRANDT fisheye in config/wil/cam0_fisheye.yaml cannot be
+        reproduced here. Hence the separate config/wil_sim/ calibration.
+
+        90 deg horizontal FOV at 1280 px gives
+          fx = fy = (width/2) / tan(hfov/2) = 640,  cx = 640, cy = 360
+        which is what config/wil_sim/cam0_pinhole.yaml states. Changing
+        horizontal_fov or the image size here means changing that file too.
+      -->
+      <sensor name='cam0' type='camera'>
+        <pose relative_to='cam0'>0 0 0 0 -0 0</pose>
+        <!-- Set explicitly. The default would be
+             /world/default/model/ackermann_robot_001/link/base_footprint/sensor/cam0/image,
+             since the world <include> renames the model to ackermann_robot_001.
+             gz derives the camera_info topic by REPLACING the last element of
+             this one, so info lands on /cam0/camera_info, NOT
+             /cam0/image_raw/camera_info. -->
+        <topic>cam0/image_raw</topic>
+        <update_rate>20</update_rate>
+        <always_on>1</always_on>
+        <visualize>0</visualize>
+        <camera>
+          <horizontal_fov>1.5707963268</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>720</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>100</far>
+          </clip>
+          <!-- A little sensor noise so the feature tracker is not fed a
+               noiseless render, which is unrealistically easy. -->
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.005</stddev>
+          </noise>
+        </camera>
+      </sensor>
+
+      <sensor name='cam1' type='camera'>
+        <pose relative_to='cam1'>0 0 0 0 -0 0</pose>
+        <topic>cam1/image_raw</topic>
+        <update_rate>20</update_rate>
+        <always_on>1</always_on>
+        <visualize>0</visualize>
+        <camera>
+          <horizontal_fov>1.5707963268</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>720</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>100</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.005</stddev>
+          </noise>
+        </camera>
+      </sensor>
+
+      <!--
+        imu_link carries no rotation, so this reports in ROS REP-103 axes
+        (x-forward, y-left, z-up) and reads (0, 0, +9.8) at rest. That is
+        deliberately NOT the real RealSense's x-right/y-down/z-forward
+        convention, which is why config/wil_sim/stereo_imu.yaml needs its own
+        body_T_cam matrices rather than the near-identity ones in config/wil/.
+
+        200 Hz matches the real rig's measured 199.5 Hz and needs no physics
+        change: the worlds step at 1 kHz (<max_step_size>0.001</max_step_size>).
+
+        gz applies <stddev> per sample, so a noise DENSITY N at rate f becomes
+        N * sqrt(f). The densities below are the usual ADIS16448 figures:
+          gyro  0.0003394 rad/s/sqrt(Hz) * sqrt(200) = 0.0048
+          accel 0.004     m/s^2/sqrt(Hz) * sqrt(200) = 0.0566
+        VINS's acc_n / gyr_n in config/wil_sim/stereo_imu.yaml are set a few
+        times looser than these densities, per the usual VINS advice.
+      -->
+      <sensor name='imu' type='imu'>
+        <pose relative_to='imu_link'>0 0 0 0 -0 0</pose>
+        <topic>imu</topic>
+        <update_rate>200</update_rate>
+        <always_on>1</always_on>
+        <imu>
+          <angular_velocity>
+            <x>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0048</stddev>
+                <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+              </noise>
+            </x>
+            <y>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0048</stddev>
+                <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+              </noise>
+            </y>
+            <z>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0048</stddev>
+                <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+              </noise>
+            </z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0566</stddev>
+                <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </x>
+            <y>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0566</stddev>
+                <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </y>
+            <z>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0566</stddev>
+                <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
     </link>
     <joint name='front_left_steering_joint' type='revolute'>
       <pose relative_to='base_footprint'>0.21 0.21 0.072 0 0 0</pose>
@@ -585,6 +781,27 @@
       <pose>0 0 0.058 0 -0 0</pose>
     </frame>
     <frame name='cam0' attached_to='cam0_joint'/>
+    <!--
+      cam1, the stereo partner. Baseline 0.0936 m, reused verbatim from the real
+      rig's calibrated 93.598 mm (config/wil/stereo_imu.yaml, body_T_cam1) so sim
+      and hardware geometry agree.
+
+      Sign: the calibration puts cam1 on cam0's optical +X, and optical +X is the
+      robot's right, which is base -Y. If the stereo pair ever looks inverted,
+      this sign and the matching one in config/wil_sim/stereo_imu.yaml are the
+      first thing to check.
+
+      cam1_undis mirrors cam0_undis: the ROS optical frame, for anyone wiring up
+      TF later. Nothing in this file points a sensor at it.
+    -->
+    <frame name='cam1_joint' attached_to='cam0'>
+      <pose>0 -0.0936 0 0 -0 0</pose>
+    </frame>
+    <frame name='cam1' attached_to='cam1_joint'/>
+    <frame name='cam1_undis_joint' attached_to='cam1'>
+      <pose>0 0 0 -1.5708 -0 -1.5708</pose>
+    </frame>
+    <frame name='cam1_undis' attached_to='cam1_undis_joint'/>
     <frame name='cam_link2_joint' attached_to='cam_link1'>
       <pose>0.087 0 0 0 -0 0</pose>
     </frame>
@@ -609,7 +826,10 @@
       drives the rear wheels and computes the correct differing left/right
       steer angles itself, so mimic is not needed.
 
-      Command it on:  /model/ackermann_robot/cmd_vel   (geometry_msgs/Twist)
+      Command it on:  /model/MODEL_NAME/cmd_vel   (geometry_msgs/Twist)
+      i.e. the WORLD-scoped name, not this file's. small_warehouse.world includes
+      the model as ackermann_robot_001, so there the topic is
+      /model/ackermann_robot_001/cmd_vel.
       Delete this block if you intend to drive the joints from ros2_control.
     -->
     <plugin filename="ignition-gazebo-ackermann-steering-system"

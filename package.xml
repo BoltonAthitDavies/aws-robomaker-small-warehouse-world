@@ -18,6 +18,9 @@
   <exec_depend>ros_gz_bridge</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <!-- Not started by any launch file here; it needs a real TTY, so it is run with
+       `ros2 run` (see README). Declared so rosdep installs it with the package. -->
+  <exec_depend>teleop_twist_keyboard</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -28,11 +28,31 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     headless = LaunchConfiguration('headless')
     verbosity = LaunchConfiguration('verbosity')
+    bridge_sensors = LaunchConfiguration('bridge_sensors')
+    bridge_cmd_vel = LaunchConfiguration('bridge_cmd_vel')
+    robot_name = LaunchConfiguration('robot_name')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
         default_value='True',
         description='Bridge /clock from Gazebo so ROS nodes can use simulation time')
+
+    # Both bridges default False here, unlike small_warehouse.launch.py: this world
+    # contains no ackermann_robot, so there would be nothing on the far side of them.
+    declare_bridge_sensors_cmd = DeclareLaunchArgument(
+        'bridge_sensors',
+        default_value='False',
+        description="Bridge the ackermann robot's cameras and IMU onto ROS topics")
+
+    declare_bridge_cmd_vel_cmd = DeclareLaunchArgument(
+        'bridge_cmd_vel',
+        default_value='False',
+        description="Bridge ROS /cmd_vel to the robot's Gazebo cmd_vel so ROS teleop can drive it")
+
+    declare_robot_name_cmd = DeclareLaunchArgument(
+        'robot_name',
+        default_value='ackermann_robot_001',
+        description='World-scoped name of the robot model, used to build its gz topic names')
 
     declare_headless_cmd = DeclareLaunchArgument(
         'headless',
@@ -54,6 +74,9 @@ def generate_launch_description():
             'use_sim_time': use_sim_time,
             'headless': headless,
             'verbosity': verbosity,
+            'bridge_sensors': bridge_sensors,
+            'bridge_cmd_vel': bridge_cmd_vel,
+            'robot_name': robot_name,
         }.items())
 
     ld = LaunchDescription()
@@ -61,6 +84,9 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_headless_cmd)
     ld.add_action(declare_verbosity_cmd)
+    ld.add_action(declare_bridge_sensors_cmd)
+    ld.add_action(declare_bridge_cmd_vel_cmd)
+    ld.add_action(declare_robot_name_cmd)
 
     ld.add_action(start_warehouse_cmd)
 
