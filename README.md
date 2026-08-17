@@ -5,6 +5,10 @@
 
 This Gazebo world is well suited for organizations who are building and testing robot applications for warehouse and logistics use cases. 
 
+> **This package targets Gazebo (Ignition) Fortress / gz-sim 6, not Gazebo Classic.**
+> On Fortress the simulator CLI is `ign gazebo` — note that `/usr/bin/gz` is Gazebo
+> *Classic*'s CLI on Ubuntu 22.04, so `gz sim ...` will not work here.
+
 ## 3D Models included in this Gazebo World
 
 | Model (/models)       | Picture           |
@@ -59,16 +63,20 @@ This Gazebo world is well suited for organizations who are building and testing 
 
 ## Example: Running this world directly in Gazebo without a ROS application
 
-To open this world in Gazebo, change the directory to your ROS workspace root folder and run:
+To open this world in Gazebo, change the directory to this repository's root folder and run:
 
 ```bash
-export GAZEBO_MODEL_PATH=`pwd`/models
-gazebo worlds/small_warehouse/small_warehouse.world
+export IGN_GAZEBO_RESOURCE_PATH=`pwd`/models
+ign gazebo -r worlds/small_warehouse/small_warehouse.world
 ```
+
+`IGN_GAZEBO_RESOURCE_PATH` must contain the `models` directory — that is the parent
+the `model://` URIs in the worlds and meshes resolve against. After building the
+package and sourcing the workspace, the environment hook sets this for you.
 
 ## Example: Running this world directly using ROS without a simulated robot
 
-To launch this base Gazebo world without a robot, clone this repository and run the following commands. **Note: ROS and gazebo must already be installed on the host.** 
+To launch this base Gazebo world without a robot, clone this repository and run the following commands. **Note: ROS 2 and Gazebo Fortress must already be installed on the host.**
 
 ```bash
 # build for ROS2
@@ -80,8 +88,38 @@ source install/setup.sh
 ros2 launch aws_robomaker_small_warehouse_world small_warehouse.launch.py
 ```
 
+### Launch arguments
+
+| Argument | Default | Description |
+| :------- | :------ | :---------- |
+| `world` | `worlds/small_warehouse/small_warehouse.world` | Full path to the world file to load |
+| `headless` | `False` | Run the Gazebo server only, without the GUI |
+| `use_sim_time` | `True` | Start a `ros_gz_bridge` for `/clock` so ROS nodes can use simulation time |
+| `verbosity` | `3` | Gazebo console verbosity, 0-4. Use `4` when debugging resource resolution. |
+
+Both launch files accept all four. For example:
+
+```bash
+ros2 launch aws_robomaker_small_warehouse_world no_roof_small_warehouse.launch.py headless:=True
+```
+
+Because gz-sim has no `gazebo_ros_init` equivalent, `/clock` only reaches ROS through
+the bridge this launch file starts. Set `use_sim_time:=False` if you bridge the clock
+yourself.
+
 **Visit the [AWS RoboMaker website](https://aws.amazon.com/robomaker/) to learn more about building intelligent robotic applications with Amazon Web Services.**
 
 ## Notes
 - Lighting might vary on different system(s) (e.g brighter on system without CPU and darker on system with GPU)
 - Adjust lighting parameters in .world file as you need
+- The two worlds are lit differently on purpose. `no_roof_small_warehouse` uses a
+  shadow-casting directional `sun`; `small_warehouse` cannot, because the roof mesh
+  would put the whole interior in shadow, so it uses a higher `<scene><ambient>` plus
+  a non-shadowing `warehouse_fill` light instead.
+- `aws_robomaker_warehouse_Lamp_01` is a lamp *mesh* only — it contains no `<light>`
+  and emits nothing. All illumination is defined at world level.
+- Each world embeds a `<gui>` block. gz-sim uses that block *instead of*
+  `~/.ignition/gazebo/6/gui.config` rather than merging with it, so any GUI plugin you
+  want must be listed in the world.
+- Both worlds are named `default`, so they cannot be run simultaneously — they would
+  contend for the same `/world/default/*` topics and services.
