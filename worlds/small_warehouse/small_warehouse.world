@@ -145,11 +145,11 @@
       <pose>0.0 0.0 -0.090092 0 0 0</pose>
     </include>
 
-    <include>
+    <!-- <include>
       <uri>model://aws_robomaker_warehouse_Lamp_01</uri>
       <name>aws_robomaker_warehouse_Lamp_01_005</name>
       <pose>0 0 -4 0 0 0</pose>
-    </include>
+    </include> -->
 
     <include>
       <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
@@ -235,12 +235,43 @@
       <pose>-1.592441 7.715420 0 0 0 0</pose>
     </include>
 
-    <include>
+    <!-- <include>
       <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
       <name>aws_robomaker_warehouse_PalletJackB_01_001</name>
       <pose>-0.276098 -9.481944 0.023266 0 0 0</pose>
+    </include> -->
+
+    <!-- sphere at origin -->
+    <include>
+      <uri>model://sphere</uri>
+      <name>sphere_at_origin</name>
+      <pose>0 0 0 0 0 0</pose>
     </include>
 
+    <include>
+      <uri>model://sphere</uri>
+      <name>sphere_at_x</name>
+      <pose>1 0 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://sphere</uri>
+      <name>sphere_at_y</name>
+      <pose>0 1 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://sphere</uri>
+      <name>sphere_at_z</name>
+      <pose>0 0 1 0 0 0</pose>
+    </include>
+
+    <!-- ackermann_robot -->
+    <include>
+      <uri>model://ackermann_robot</uri>
+      <name>ackermann_robot_001</name>
+      <pose>1.8 9 0 0 0 -1.5708</pose>
+    </include>
 
     <gui fullscreen="0">
       <plugin filename="MinimalScene" name="3D View">
@@ -253,7 +284,7 @@
         <scene>scene</scene>
         <ambient_light>0.7 0.7 0.7</ambient_light>
         <background_color>0.25 0.28 0.32</background_color>
-        <camera_pose>0.6 9.6 3.6 0 0.20 -1.5708</camera_pose>
+        <camera_pose>0.0 0.0 10.0 0.0 1.5708 1.5708</camera_pose>
       </plugin>
 
       <!-- Embedding <gui> in the world replaces gui.config outright rather than

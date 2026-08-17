@@ -1,0 +1,637 @@
+<?xml version="1.0" ?>
+<!--
+  Generated from urdf/ackermann_robot.urdf via `ign sdf -p`, then edited.
+  Regenerate with that command if the URDF changes; the three edits are:
+    1. Gazebo Classic <script>Gazebo/Blue</script> material blocks removed.
+    2. Converter float noise collapsed.
+    3. AckermannSteering system added (see the comment near the bottom).
+
+  Link layout note: every fixed-joint child (base_link, imu_link, cam_link1,
+  cam_link2, cam0, cam0_undis, cam0_depth) is lumped into base_footprint by the
+  URDF converter, which is exactly what Gazebo does when spawning the URDF
+  directly. Their frames survive as <frame> elements at the end of the file.
+-->
+<sdf version='1.9'>
+  <model name='ackermann_robot'>
+    <link name='base_footprint'>
+      <inertial>
+        <pose>0.003346535 0 0.097940594 0 0 0</pose>
+        <mass>10.1</mass>
+        <inertia>
+          <ixx>0.148403564</ixx>
+          <ixy>0</ixy>
+          <ixz>-0.003179208</ixz>
+          <iyy>0.314714851</iyy>
+          <iyz>0</iyz>
+          <izz>0.453831287</izz>
+        </inertia>
+      </inertial>
+      <collision name='base_footprint_fixed_joint_lump__base_link_collision'>
+        <pose>0 0 0.097 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.6 0.463 0.05</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__cam_link1_collision_1'>
+        <pose>0.409 0 0.3815 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.2025 0.02 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__cam_link2_collision_2'>
+        <pose>0.496 0 0.3815 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.087 0.02 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__cam0_collision_3'>
+        <pose>0.496 0 0.4395 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__cam0_depth_collision_4'>
+        <pose>0.496 0 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.028 0.028</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__cam0_undis_collision_5'>
+        <pose>0.496 0 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.028 0.028</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__imu_link_collision_6'>
+        <pose>0.338 0 0.192 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.02</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='base_footprint_fixed_joint_lump__base_link_visual'>
+        <pose>0 0 0.097 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.6 0.463 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+          <ambient>0 0 1 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__cam_link1_visual_1'>
+        <pose>0.409 0 0.3815 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.2025 0.02 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+          <ambient>0 0 1 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__cam_link2_visual_2'>
+        <pose>0.496 0 0.3815 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.087 0.02 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+          <ambient>0 0 1 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__cam0_visual_3'>
+        <pose>0.496 0 0.4395 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+          <ambient>0 0 1 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__cam0_depth_visual_4'>
+        <pose>0.496 0 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.028 0.028</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 1 0 1</diffuse>
+          <ambient>0 1 0 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__cam0_undis_visual_5'>
+        <pose>0.496 0 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.028 0.028</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 1 0 1</diffuse>
+          <ambient>0 1 0 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__imu_link_visual_6'>
+        <pose>0.338 0 0.192 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 1 0 1</diffuse>
+          <ambient>0 1 0 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='front_left_steering_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0.21 0.21 0.072 0 0 0</pose>
+      <parent>base_footprint</parent>
+      <child>front_left_steering_knuckle</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-0.6109</lower>
+          <upper>0.6109</upper>
+          <effort>100</effort>
+          <velocity>1</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.1</damping>
+          <friction>0.01</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='front_left_steering_knuckle'>
+      <pose relative_to='front_left_steering_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.2</mass>
+        <inertia>
+          <ixx>0.0002</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0002</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      <collision name='front_left_steering_knuckle_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.1</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='front_left_steering_knuckle_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.1</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0.625 0.625 0.625 1</diffuse>
+          <ambient>0.625 0.625 0.625 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='front_left_wheel_joint' type='revolute'>
+      <pose relative_to='front_left_steering_knuckle'>0 0 0 -1.5708 0 0</pose>
+      <parent>front_left_steering_knuckle</parent>
+      <child>front_left_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.2</damping>
+          <friction>0.1</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='front_left_wheel'>
+      <pose relative_to='front_left_wheel_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.000531</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000531</iyy>
+          <iyz>0</iyz>
+          <izz>0.000856</izz>
+        </inertia>
+      </inertial>
+      <collision name='front_left_wheel_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='front_left_wheel_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0 0 0 1</diffuse>
+          <ambient>0 0 0 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='front_right_steering_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0.21 -0.21 0.072 0 0 0</pose>
+      <parent>base_footprint</parent>
+      <child>front_right_steering_knuckle</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-0.6109</lower>
+          <upper>0.6109</upper>
+          <effort>100</effort>
+          <velocity>1</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.1</damping>
+          <friction>0.01</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='front_right_steering_knuckle'>
+      <pose relative_to='front_right_steering_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.2</mass>
+        <inertia>
+          <ixx>0.0002</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0002</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      <collision name='front_right_steering_knuckle_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.1</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='front_right_steering_knuckle_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.1</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0.625 0.625 0.625 1</diffuse>
+          <ambient>0.625 0.625 0.625 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='front_right_wheel_joint' type='revolute'>
+      <pose relative_to='front_right_steering_knuckle'>0 0 0 -1.5708 0 0</pose>
+      <parent>front_right_steering_knuckle</parent>
+      <child>front_right_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.2</damping>
+          <friction>0.1</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='front_right_wheel'>
+      <pose relative_to='front_right_wheel_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.000531</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000531</iyy>
+          <iyz>0</iyz>
+          <izz>0.000856</izz>
+        </inertia>
+      </inertial>
+      <collision name='front_right_wheel_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='front_right_wheel_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0 0 0 1</diffuse>
+          <ambient>0 0 0 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='rear_left_wheel_joint' type='revolute'>
+      <pose relative_to='base_footprint'>-0.21 0.21 0.072 -1.5708 0 0</pose>
+      <parent>base_footprint</parent>
+      <child>rear_left_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.2</damping>
+          <friction>0.1</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='rear_left_wheel'>
+      <pose relative_to='rear_left_wheel_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.000531</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000531</iyy>
+          <iyz>0</iyz>
+          <izz>0.000856</izz>
+        </inertia>
+      </inertial>
+      <collision name='rear_left_wheel_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='rear_left_wheel_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0 0 0 1</diffuse>
+          <ambient>0 0 0 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='rear_right_wheel_joint' type='revolute'>
+      <pose relative_to='base_footprint'>-0.21 -0.21 0.072 -1.5708 0 0</pose>
+      <parent>base_footprint</parent>
+      <child>rear_right_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.2</damping>
+          <friction>0.1</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='rear_right_wheel'>
+      <pose relative_to='rear_right_wheel_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.000531</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000531</iyy>
+          <iyz>0</iyz>
+          <izz>0.000856</izz>
+        </inertia>
+      </inertial>
+      <collision name='rear_right_wheel_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='rear_right_wheel_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0 0 0 1</diffuse>
+          <ambient>0 0 0 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <frame name='cam0_depth_joint' attached_to='cam0'>
+      <pose>0 0 0 -1.5708 -0 -1.5708</pose>
+    </frame>
+    <frame name='cam0_depth' attached_to='cam0_depth_joint'/>
+    <frame name='cam0_undis_joint' attached_to='cam0'>
+      <pose>0 0 0 -1.5708 -0 -1.5708</pose>
+    </frame>
+    <frame name='cam0_undis' attached_to='cam0_undis_joint'/>
+    <frame name='cam0_joint' attached_to='cam_link2'>
+      <pose>0 0 0.058 0 -0 0</pose>
+    </frame>
+    <frame name='cam0' attached_to='cam0_joint'/>
+    <frame name='cam_link2_joint' attached_to='cam_link1'>
+      <pose>0.087 0 0 0 -0 0</pose>
+    </frame>
+    <frame name='cam_link2' attached_to='cam_link2_joint'/>
+    <frame name='cam_link1_joint' attached_to='base_link'>
+      <pose>0.409 0 0.2845 0 -0 0</pose>
+    </frame>
+    <frame name='cam_link1' attached_to='cam_link1_joint'/>
+    <frame name='imu_joint' attached_to='base_link'>
+      <pose>0.338 0 0.095 0 -0 0</pose>
+    </frame>
+    <frame name='imu_link' attached_to='imu_joint'/>
+    <frame name='base_footprint_joint' attached_to='base_footprint'>
+      <pose>0 0 0.097 0 -0 0</pose>
+    </frame>
+    <frame name='base_link' attached_to='base_footprint_joint'/>
+
+    <!--
+      REPLACES THE URDF's mimic tags. libsdformat12 / Fortress has no mimic
+      joint support and drops them silently on conversion, which would leave
+      both front steering joints free-swinging and unactuated. AckermannSteering
+      drives the rear wheels and computes the correct differing left/right
+      steer angles itself, so mimic is not needed.
+
+      Command it on:  /model/ackermann_robot/cmd_vel   (geometry_msgs/Twist)
+      Delete this block if you intend to drive the joints from ros2_control.
+    -->
+    <plugin filename="ignition-gazebo-ackermann-steering-system"
+            name="gz::sim::systems::AckermannSteering">
+      <!-- Rear-wheel drive, per the "(DRIVEN)" comments in the URDF. -->
+      <left_joint>rear_left_wheel_joint</left_joint>
+      <right_joint>rear_right_wheel_joint</right_joint>
+      <left_steering_joint>front_left_steering_joint</left_steering_joint>
+      <right_steering_joint>front_right_steering_joint</right_steering_joint>
+      <!-- Measured off the URDF joint origins: axles at x = +/-0.21,
+           wheels and kingpins at y = +/-0.21, wheel radius 0.0585. -->
+      <kingpin_width>0.42</kingpin_width>
+      <wheel_base>0.42</wheel_base>
+      <wheel_separation>0.42</wheel_separation>
+      <wheel_radius>0.0585</wheel_radius>
+      <!-- Matches the +/-0.6109 rad limit on the steering joints. -->
+      <steering_limit>0.6109</steering_limit>
+      <min_velocity>-2</min_velocity>
+      <max_velocity>2</max_velocity>
+      <min_acceleration>-3</min_acceleration>
+      <max_acceleration>3</max_acceleration>
+      <odom_publish_frequency>50</odom_publish_frequency>
+    </plugin>
+  </model>
+</sdf>

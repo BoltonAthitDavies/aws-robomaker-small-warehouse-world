@@ -1,0 +1,67 @@
+<?xml version="1.0" ?>
+<!--
+  URDF translation of models/aws_robomaker_warehouse_GroundB_01/model.sdf.
+
+  URDF cannot express three things the SDF relies on, so they are carried in
+  <gazebo> extension blocks below and re-emitted when libsdformat converts this
+  file back to SDF at spawn time:
+    * <static>          - no URDF equivalent at all
+    * <surface><friction> - becomes <mu1>/<mu2> on the link
+    * mesh URIs         - package:// here so RViz resolves them; see README note
+
+  The mesh sits 0 .. 0.124 m above this model's origin, i.e. the origin is at
+  the slab's underside, not its walking surface.
+-->
+<robot name="aws_robomaker_warehouse_GroundB_01">
+
+  <link name="ground_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1000"/>
+      <!-- Solid-box inertia for the 13.98 x 20.907 x 0.124 m collision mesh.
+           The original values violated the inertia triangle inequality, which
+           Gazebo Classic ignored but libsdformat12 rejects outright. -->
+      <inertia ixx="36425.342" ixy="0" ixz="0"
+               iyy="16289.083" iyz="0"
+               izz="52711.849"/>
+    </inertial>
+
+    <!-- Deliberately unnamed: a name= attribute on <visual>/<collision> makes
+         libsdformat's URDF parser rename them to *_fixed_joint_lump__*, and the
+         <gazebo reference> friction extension below then fails to match and is
+         silently dropped. Verified with `ign sdf -p`. -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://aws_robomaker_small_warehouse_world/models/aws_robomaker_warehouse_GroundB_01/meshes/aws_robomaker_warehouse_GroundB_01_visual.DAE"/>
+      </geometry>
+      <!-- No <material> on purpose: the COLLADA file carries its own, and
+           declaring one here would override the floor texture with flat colour. -->
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://aws_robomaker_small_warehouse_world/models/aws_robomaker_warehouse_GroundB_01/meshes/aws_robomaker_warehouse_GroundB_01_collision.DAE" scale="1 1 1"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Model-level extension: <static>1</static> in the source SDF. Without
+       this the floor is a 1000 kg free body and falls out of the world. -->
+  <gazebo>
+    <static>true</static>
+  </gazebo>
+
+  <!-- Link-level extension: the ODE friction block from the source SDF.
+       mu/mu2 100/50 is the anisotropic warehouse floor grip. -->
+  <gazebo reference="ground_link">
+    <mu1>100</mu1>
+    <mu2>50</mu2>
+    <fdir1>0 0 0</fdir1>
+    <!-- The source SDF also set slip1/slip2 to 0. They are omitted here because
+         the URDF parser has no mapping for them and emits them as bare <link>
+         children, which is not valid SDF. 0 is the ODE default regardless. -->
+  </gazebo>
+
+</robot>
