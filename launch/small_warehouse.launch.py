@@ -13,16 +13,94 @@
 # limitations under the License.
 
 import os
+import re
+import shutil
+import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    LogInfo,
+    OpaqueFunction,
+    SetEnvironmentVariable,
+)
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
 from launch_ros.actions import Node
+
+# Where the speed-patched copy of the robot model is written. Stable rather than a
+# fresh mkdtemp per run, so repeated launches do not litter /tmp and so the path in
+# the log stays the same while you are debugging.
+_MODEL_OVERRIDE_ROOT = os.path.join(
+    tempfile.gettempdir(), 'aws_warehouse_ackermann_override')
+
+
+def _override_speed_limits(context, *args, **kwargs):
+    """Shadow the installed ackermann_robot model with a speed-patched copy.
+
+    AckermannSteering reads min/max velocity and acceleration once at plugin load
+    and exposes no topic or service to change them, and sdformat 12 has no
+    parameter substitution. So the only way to drive them from a launch argument
+    is to rewrite the SDF before gz parses it, then put the rewritten copy earlier
+    on IGN_GAZEBO_RESOURCE_PATH than the installed one, since gz takes the first
+    `model://` match it finds.
+
+    The copy is regenerated from the INSTALLED model every launch, so editing the
+    real model.sdf (and rebuilding) still takes effect and this cannot go stale.
+    When the requested values already match the model, nothing is generated and
+    nothing is shadowed -- the common case leaves the resource path untouched.
+    """
+    pkg_share = get_package_share_directory('aws_robomaker_small_warehouse_world')
+    src_dir = os.path.join(pkg_share, 'models', 'ackermann_robot')
+    src_sdf = os.path.join(src_dir, 'model.sdf')
+
+    speed = float(context.perform_substitution(LaunchConfiguration('max_speed')))
+    accel = float(context.perform_substitution(LaunchConfiguration('max_accel')))
+
+    with open(src_sdf) as f:
+        sdf = f.read()
+
+    def current(tag):
+        match = re.search(r'<{0}>\s*([-\d.eE+]+)\s*</{0}>'.format(tag), sdf)
+        if match is None:
+            raise RuntimeError(
+                '<{}> not found in {} -- max_speed/max_accel cannot be applied. '
+                'Was the AckermannSteering block edited?'.format(tag, src_sdf))
+        return float(match.group(1))
+
+    if (speed, accel) == (current('max_velocity'), current('max_acceleration')):
+        return []
+
+    for tag, value in (('min_velocity', -speed), ('max_velocity', speed),
+                       ('min_acceleration', -accel), ('max_acceleration', accel)):
+        sdf = re.sub(r'<{0}>\s*[-\d.eE+]+\s*</{0}>'.format(tag),
+                     '<{0}>{1}</{0}>'.format(tag, value), sdf, count=1)
+
+    out_dir = os.path.join(_MODEL_OVERRIDE_ROOT, 'ackermann_robot')
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, 'model.sdf'), 'w') as f:
+        f.write(sdf)
+    # model.config is what makes the directory resolvable as a `model://` URI.
+    shutil.copyfile(os.path.join(src_dir, 'model.config'),
+                    os.path.join(out_dir, 'model.config'))
+
+    # Prepend, so this copy wins over the installed one. Fortress reads
+    # IGN_GAZEBO_RESOURCE_PATH; GZ_SIM_RESOURCE_PATH is set too because the
+    # package's env-hook populates both.
+    actions = [LogInfo(msg='max_speed={} m/s, max_accel={} m/s^2: gz will load a '
+                           'patched robot model from {} instead of the installed '
+                           'one.'.format(speed, accel, out_dir))]
+    for var in ('IGN_GAZEBO_RESOURCE_PATH', 'GZ_SIM_RESOURCE_PATH'):
+        existing = os.environ.get(var, '')
+        actions.append(SetEnvironmentVariable(
+            var,
+            _MODEL_OVERRIDE_ROOT + (os.pathsep + existing if existing else '')))
+    return actions
 
 
 def generate_launch_description():
@@ -35,6 +113,7 @@ def generate_launch_description():
     verbosity = LaunchConfiguration('verbosity')
     bridge_sensors = LaunchConfiguration('bridge_sensors')
     bridge_cmd_vel = LaunchConfiguration('bridge_cmd_vel')
+    bridge_ground_truth = LaunchConfiguration('bridge_ground_truth')
     robot_name = LaunchConfiguration('robot_name')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -52,12 +131,31 @@ def generate_launch_description():
         default_value='True',
         description="Bridge ROS /cmd_vel to the robot's Gazebo cmd_vel so ROS teleop can drive it")
 
+    declare_bridge_ground_truth_cmd = DeclareLaunchArgument(
+        'bridge_ground_truth',
+        default_value='True',
+        description="Bridge the robot's true-pose odometry onto ROS as /ground_truth/odometry")
+
     # The robot's gz topics are scoped by the name the WORLD gives it, which is the
     # <include><name> in small_warehouse.world, not the <model name> in model.sdf.
     declare_robot_name_cmd = DeclareLaunchArgument(
         'robot_name',
         default_value='ackermann_robot_001',
         description='World-scoped name of the robot model, used to build its gz topic names')
+
+    # Defaults must match the AckermannSteering block in models/ackermann_robot/model.sdf,
+    # otherwise every launch needlessly generates a patched copy of it.
+    declare_max_speed_cmd = DeclareLaunchArgument(
+        'max_speed',
+        default_value='10.0',
+        description="Robot speed cap in m/s, forward and reverse. Above ~10 expect "
+                    "tyre slip on the 1 ms physics step.")
+
+    declare_max_accel_cmd = DeclareLaunchArgument(
+        'max_accel',
+        default_value='3.0',
+        description='Robot acceleration cap in m/s^2. Decides how much run-up the '
+                    'top speed needs: 10 m/s at 3 m/s^2 takes 3.3 s and about 17 m.')
 
     declare_headless_cmd = DeclareLaunchArgument(
         'headless',
@@ -155,6 +253,23 @@ def generate_launch_description():
         remappings=[(['/model/', robot_name, '/cmd_vel'], '/cmd_vel')],
         condition=IfCondition(bridge_cmd_vel))
 
+    # Ground truth, from the OdometryPublisher system in model.sdf. Separate from
+    # sensor_bridge because it is not a sensor: it is the reference you SCORE the
+    # sensors against, and you may well want it off while recording a bag that is
+    # meant to look like real hardware.
+    #
+    # Not to be confused with the AckermannSteering wheel odometry on
+    # /model/<robot_name>/odometry, which is dead reckoning and is not bridged.
+    start_ground_truth_bridge_cmd = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='ground_truth_bridge',
+        output='screen',
+        arguments=[
+            '/ground_truth/odometry@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
+        ],
+        condition=IfCondition(bridge_ground_truth))
+
     ld = LaunchDescription()
 
     ld.add_action(declare_use_sim_time_cmd)
@@ -163,12 +278,19 @@ def generate_launch_description():
     ld.add_action(declare_verbosity_cmd)
     ld.add_action(declare_bridge_sensors_cmd)
     ld.add_action(declare_bridge_cmd_vel_cmd)
+    ld.add_action(declare_bridge_ground_truth_cmd)
     ld.add_action(declare_robot_name_cmd)
+    ld.add_action(declare_max_speed_cmd)
+    ld.add_action(declare_max_accel_cmd)
+
+    # Must run BEFORE gz starts: it sets the resource path the gz process inherits.
+    ld.add_action(OpaqueFunction(function=_override_speed_limits))
 
     ld.add_action(start_gz_gui_cmd)
     ld.add_action(start_gz_server_cmd)
     ld.add_action(start_clock_bridge_cmd)
     ld.add_action(start_sensor_bridge_cmd)
     ld.add_action(start_cmd_vel_bridge_cmd)
+    ld.add_action(start_ground_truth_bridge_cmd)
 
     return ld

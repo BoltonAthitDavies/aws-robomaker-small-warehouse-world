@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+#
+# Keyboard teleop for the ackermann robot, with defaults matched to its geometry.
+#
+#   ros2 run aws_robomaker_small_warehouse_world teleop
+#   ros2 run aws_robomaker_small_warehouse_world teleop 1.0        # faster
+#   ros2 run aws_robomaker_small_warehouse_world teleop 1.0 1.2    # faster + sharper
+#
+# EDIT THE TWO DEFAULTS BELOW to change what a bare `teleop` does.
+#
+# This wrapper exists because teleop_twist_keyboard declares `speed` and `turn`
+# read_only, so they can only be set at process start -- `ros2 param set` is
+# rejected at runtime. Use the q/z/w/x/e/c keys to trim speed while driving.
+#
+# It is deliberately a `ros2 run` wrapper and not a launch file: a node started
+# by `ros2 launch` never sees the keyboard, because launch gives its children a
+# pipe for stdin. `exec` below keeps this script's terminal attached to the node.
+
+set -euo pipefail
+
+# Defaults. TURN is capped by the steering geometry in models/ackermann_robot/model.sdf:
+# steering_limit 0.6109 rad (35 deg) over wheel_base 0.42 m gives a maximum yaw rate of
+# omega = v * tan(35 deg) / 0.42 = 1.667 * v, so 0.8 rad/s is full lock at 0.5 m/s.
+# Raising SPEED without raising TURN just makes the turns wider.
+DEFAULT_SPEED=0.5
+DEFAULT_TURN=0.8
+
+SPEED="${1:-$DEFAULT_SPEED}"
+TURN="${2:-$DEFAULT_TURN}"
+
+echo "teleop: speed ${SPEED} m/s, turn ${TURN} rad/s -> /cmd_vel"
+echo "        this robot cannot turn on the spot; hold i or , while steering with u/o/m/."
+echo
+
+exec ros2 run teleop_twist_keyboard teleop_twist_keyboard \
+  --ros-args -p "speed:=${SPEED}" -p "turn:=${TURN}"

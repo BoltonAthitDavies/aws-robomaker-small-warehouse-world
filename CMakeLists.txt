@@ -17,6 +17,13 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+# PROGRAMS, not FILES, so the executable bit survives; lib/, not share/, because
+# that is where `ros2 run <pkg> <name>` looks.
+install(
+  PROGRAMS scripts/teleop
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/aws_robomaker_small_warehouse_world.dsv.in")
 
 ament_export_dependencies(ament_cmake)

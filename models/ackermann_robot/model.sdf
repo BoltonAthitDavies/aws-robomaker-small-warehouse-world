@@ -442,6 +442,21 @@
         </material>
       </visual>
     </link>
+    <!--
+      All four WHEEL joints carry damping 0 / friction 0. The URDF originally had
+      0.2 and 0.1, and those two numbers were what actually capped the vehicle's
+      speed, NOT the max_velocity tag.
+
+      Measured, by comparing true world pose against the plugin's wheel odometry:
+      with 0.2/0.1 the robot topped out at ~0.5 m/s of real ground speed no matter
+      what was commanded (0.5, 1, 2 and 3 m/s all produced 0.43-0.53 m/s), while
+      the odometry cheerfully reported the commanded figure because it is dead
+      reckoning off the joint encoders and cannot see slip. With 0/0, a 5 m/s
+      command produces 4.18 m/s measured, the balance being the acceleration ramp.
+
+      The STEERING joints keep their 0.1/0.01; damping is wanted there, and they
+      do not oppose forward motion.
+    -->
     <joint name='front_left_wheel_joint' type='revolute'>
       <pose relative_to='front_left_steering_knuckle'>0 0 0 -1.5708 0 0</pose>
       <parent>front_left_steering_knuckle</parent>
@@ -453,8 +468,8 @@
           <upper>10000000000000000</upper>
         </limit>
         <dynamics>
-          <damping>0.2</damping>
-          <friction>0.1</friction>
+          <damping>0.0</damping>
+          <friction>0.0</friction>
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
@@ -582,8 +597,8 @@
           <upper>10000000000000000</upper>
         </limit>
         <dynamics>
-          <damping>0.2</damping>
-          <friction>0.1</friction>
+          <damping>0.0</damping>
+          <friction>0.0</friction>
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
@@ -648,8 +663,8 @@
           <upper>10000000000000000</upper>
         </limit>
         <dynamics>
-          <damping>0.2</damping>
-          <friction>0.1</friction>
+          <damping>0.0</damping>
+          <friction>0.0</friction>
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
@@ -714,8 +729,8 @@
           <upper>10000000000000000</upper>
         </limit>
         <dynamics>
-          <damping>0.2</damping>
-          <friction>0.1</friction>
+          <damping>0.0</damping>
+          <friction>0.0</friction>
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
@@ -847,10 +862,68 @@
       <wheel_radius>0.0585</wheel_radius>
       <!-- Matches the +/-0.6109 rad limit on the steering joints. -->
       <steering_limit>0.6109</steering_limit>
-      <min_velocity>-2</min_velocity>
-      <max_velocity>2</max_velocity>
+      <!--
+        Speed cap. AckermannSteering reads these once at load and offers no runtime
+        API, and sdformat 12 has no parameter substitution, so these values ARE the
+        configuration point. small_warehouse.launch.py's max_speed / max_accel
+        arguments work by rewriting a copy of this file before gz parses it; keep
+        the values here and the launch-file defaults in step.
+
+        10 m/s on 0.0585 m wheels means 171 rad/s at the axle. That is fast for a
+        10.1 kg vehicle on a 1 ms physics step, so expect tyre slip and a real gap
+        between commanded and achieved speed near the top of the range. Anything
+        that needs faithful wheel contact should stay well below it.
+
+        Reverse is symmetric, and the acceleration limit is what decides whether the
+        top speed is reachable at all: at 3 m/s^2 it takes 3.3 s and about 17 m of
+        run-up to reach 10 m/s, which is most of the warehouse.
+      -->
+      <min_velocity>-10</min_velocity>
+      <max_velocity>10</max_velocity>
       <min_acceleration>-3</min_acceleration>
       <max_acceleration>3</max_acceleration>
+      <odom_publish_frequency>50</odom_publish_frequency>
+    </plugin>
+
+    <!--
+      GROUND TRUTH odometry, for scoring VINS (or anything else) against reality.
+
+      This is a genuinely different quantity from the odometry AckermannSteering
+      publishes above. That one integrates the wheel joints, so it is dead
+      reckoning: it reports the COMMANDED speed even when the tyres are slipping
+      and the robot is barely moving. OdometryPublisher instead reads the model's
+      true world pose out of the ECM and finite-differences it for the twist, so
+      it cannot drift and cannot be fooled by slip.
+
+      The two topics are deliberately named differently. Do NOT let this one
+      default: the default is /model/MODEL_NAME/odometry, which is exactly what
+      AckermannSteering already publishes, and the two would fight over it.
+
+      /ground_truth/* is unscoped, which assumes ONE robot in the world. Give each
+      robot its own topic here if you ever spawn a second.
+
+      gaussian_noise is left off on purpose. This is the reference signal; if you
+      want a noisy odometry source, add noise downstream rather than corrupting
+      the thing you are measuring against.
+    -->
+    <!--
+      NOTE the name: ignition::gazebo::, not gz::sim:: as used by AckermannSteering
+      just above. In this Fortress build (6.17.1) libignition-gazebo6-ackermann-
+      steering-system registers BOTH aliases, but the odometry-publisher library
+      registers only the ignition:: one. Using gz::sim:: here fails with
+      "Could not find a plugin with that name or alias" and the plugin is silently
+      skipped; the world still loads, you just get no topic. Verify with:
+        strings /usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/<lib>.so.6.17.1 \
+          | grep -E '^(gz|ignition)::(sim|gazebo)::systems::'
+    -->
+    <plugin filename="ignition-gazebo-odometry-publisher-system"
+            name="ignition::gazebo::systems::OdometryPublisher">
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <odom_topic>/ground_truth/odometry</odom_topic>
+      <tf_topic>/ground_truth/pose</tf_topic>
+      <!-- 3, not 2: keeps z so a robot that climbs or tips is still described. -->
+      <dimensions>3</dimensions>
       <odom_publish_frequency>50</odom_publish_frequency>
     </plugin>
   </model>

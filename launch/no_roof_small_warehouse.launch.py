@@ -30,7 +30,10 @@ def generate_launch_description():
     verbosity = LaunchConfiguration('verbosity')
     bridge_sensors = LaunchConfiguration('bridge_sensors')
     bridge_cmd_vel = LaunchConfiguration('bridge_cmd_vel')
+    bridge_ground_truth = LaunchConfiguration('bridge_ground_truth')
     robot_name = LaunchConfiguration('robot_name')
+    max_speed = LaunchConfiguration('max_speed')
+    max_accel = LaunchConfiguration('max_accel')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
@@ -49,10 +52,27 @@ def generate_launch_description():
         default_value='False',
         description="Bridge ROS /cmd_vel to the robot's Gazebo cmd_vel so ROS teleop can drive it")
 
+    declare_bridge_ground_truth_cmd = DeclareLaunchArgument(
+        'bridge_ground_truth',
+        default_value='False',
+        description="Bridge the robot's true-pose odometry onto ROS as /ground_truth/odometry")
+
     declare_robot_name_cmd = DeclareLaunchArgument(
         'robot_name',
         default_value='ackermann_robot_001',
         description='World-scoped name of the robot model, used to build its gz topic names')
+
+    declare_max_speed_cmd = DeclareLaunchArgument(
+        'max_speed',
+        default_value='10.0',
+        description="Robot speed cap in m/s, forward and reverse. Above ~10 expect "
+                    "tyre slip on the 1 ms physics step.")
+
+    declare_max_accel_cmd = DeclareLaunchArgument(
+        'max_accel',
+        default_value='3.0',
+        description='Robot acceleration cap in m/s^2. Decides how much run-up the '
+                    'top speed needs: 10 m/s at 3 m/s^2 takes 3.3 s and about 17 m.')
 
     declare_headless_cmd = DeclareLaunchArgument(
         'headless',
@@ -76,7 +96,10 @@ def generate_launch_description():
             'verbosity': verbosity,
             'bridge_sensors': bridge_sensors,
             'bridge_cmd_vel': bridge_cmd_vel,
+            'bridge_ground_truth': bridge_ground_truth,
             'robot_name': robot_name,
+            'max_speed': max_speed,
+            'max_accel': max_accel,
         }.items())
 
     ld = LaunchDescription()
@@ -86,7 +109,10 @@ def generate_launch_description():
     ld.add_action(declare_verbosity_cmd)
     ld.add_action(declare_bridge_sensors_cmd)
     ld.add_action(declare_bridge_cmd_vel_cmd)
+    ld.add_action(declare_bridge_ground_truth_cmd)
     ld.add_action(declare_robot_name_cmd)
+    ld.add_action(declare_max_speed_cmd)
+    ld.add_action(declare_max_accel_cmd)
 
     ld.add_action(start_warehouse_cmd)
 
