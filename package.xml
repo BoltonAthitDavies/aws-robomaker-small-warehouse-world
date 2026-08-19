@@ -22,6 +22,29 @@
        `ros2 run` (see README). Declared so rosdep installs it with the package. -->
   <exec_depend>teleop_twist_keyboard</exec_depend>
 
+  <!-- TF tree for Nav2: localization_tf.launch.py + scripts/ground_truth_localization -->
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+
+  <!-- Nav2, used by nav2.launch.py + params/nav2_ackermann.yaml. Static map only:
+       no AMCL (ground truth localizes) and no obstacle layer (the robot has no
+       lidar), so nav2_amcl is deliberately absent from this list. -->
+  <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>nav2_map_server</exec_depend>
+  <exec_depend>nav2_lifecycle_manager</exec_depend>
+  <exec_depend>nav2_smac_planner</exec_depend>
+  <exec_depend>nav2_regulated_pure_pursuit_controller</exec_depend>
+  <exec_depend>nav2_velocity_smoother</exec_depend>
+  <exec_depend>nav2_behaviors</exec_depend>
+  <exec_depend>nav2_bt_navigator</exec_depend>
+  <exec_depend>nav2_controller</exec_depend>
+  <exec_depend>nav2_planner</exec_depend>
+  <exec_depend>nav2_smoother</exec_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

@@ -8,7 +8,7 @@
          so the SDF type attribute is informational only. -->
     <physics name="default_physics" type="ignored">
       <max_step_size>0.001</max_step_size>
-      <real_time_factor>0.7</real_time_factor>
+      <real_time_factor>1</real_time_factor>
     </physics>
 
     <!-- Fortress only auto-loads its default systems when a world declares no
@@ -288,7 +288,7 @@
         <scene>scene</scene>
         <ambient_light>0.7 0.7 0.7</ambient_light>
         <background_color>0.25 0.28 0.32</background_color>
-        <camera_pose>0.0 0.0 10.0 0.0 1.5708 1.5708</camera_pose>
+        <camera_pose>0.0 0.0 10.0 0.0 1.5708 -1.5708</camera_pose>
       </plugin>
 
       <!-- Embedding <gui> in the world replaces gui.config outright rather than

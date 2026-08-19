@@ -272,79 +272,87 @@ Two gotchas worth knowing if you edit the plugin block:
 
 ### Running on a discrete GPU
 
-Camera rendering dominates this simulation. Measured on an Intel iGPU:
+Camera rendering dominates this simulation, but **only while something is subscribed to
+the image topics**. gz-sim renders a camera lazily: with no subscriber the sensor costs
+essentially nothing. Measured on an Intel iGPU, same world and robot throughout:
 
-| Configuration | Real-time factor | Cost per simulated second |
-| :------------ | :--------------- | :------------------------ |
-| Warehouse only, no robot | 0.78 | 1.28 s |
-| Warehouse + robot + two 1280x720 cameras @ 20 Hz | 0.18 | 5.56 s |
+| Camera subscribers | Real-time factor |
+| :----------------- | :--------------- |
+| none (`bridge_sensors:=False`) | **1.00** |
+| one image topic bridged | **0.07** |
 
-The cameras account for roughly 77% of the total work, so moving them onto a discrete
-GPU is the single biggest speed-up available. Tuning `<max_step_size>` is not worth it by
-comparison: even infinitely fast physics only takes 0.18 to about 0.23.
-
-First check what is actually rendering:
-
-```bash
-glxinfo -B | grep "OpenGL renderer"
-```
-
-`llvmpipe` or `swrast` means CPU software rendering. A vendor name such as
-`Mesa Intel(R) UHD Graphics` means an integrated GPU — hardware, but usually the weakest
-option on a laptop with hybrid graphics.
-
-On an NVIDIA Optimus laptop the discrete card is often bound to the open-source `nouveau`
-driver, which cannot reclock modern cards and is typically *slower* than the iGPU. Check
-with `lsmod | grep -E "nvidia|nouveau"`; if you see `nouveau` and `nvidia-smi` does not
-exist, install the proprietary driver first:
+So the cheapest speed-up by far is simply not to bridge the cameras when you do not need
+vision — driving, teleop, vehicle tuning:
 
 ```bash
-ubuntu-drivers devices          # see what is recommended for your card
-sudo ubuntu-drivers install
-sudo reboot
-nvidia-smi                      # must now exist before going further
+ros2 launch aws_robomaker_small_warehouse_world small_warehouse.launch.py bridge_sensors:=False
 ```
 
-Then launch with PRIME render offload:
+That runs at real time. Note the trap in the other direction: anything that subscribes
+will re-enable rendering, including a stray `ign topic -e -t /cam0/image_raw` or an
+`rqt_image_view` you left open in another terminal. If the simulation suddenly crawls,
+look for a subscriber before blaming the machine.
+
+Tuning `<max_step_size>` is not worth it by comparison — with the cameras unsubscribed
+you are already at real time, and with them subscribed the cost is rendering, not physics.
+
+Once NVIDIA's proprietary driver is installed (`nvidia-smi` exists), **the Gazebo server
+already uses the discrete GPU in headless mode with no extra flags**. Headless rendering
+goes through EGL, and glvnd tries `/usr/share/glvnd/egl_vendor.d/10_nvidia.json` before
+`50_mesa.json`, so NVIDIA wins by default. Confirm rather than assume:
 
 ```bash
-prime-run ros2 launch aws_robomaker_small_warehouse_world small_warehouse.launch.py
+nvidia-smi | grep -i gazebo                       # gz should appear, holding GPU memory
+ls -l /proc/$(pgrep -f '^ign gazebo' | head -1)/fd | grep -o 'renderD[0-9]*'
 ```
 
-or, if `prime-run` is not installed (it ships with `nvidia-prime`):
+`renderD128` is normally the Intel iGPU and `renderD129` the discrete card; check with
+`cat /sys/class/drm/renderD129/device/uevent | grep DRIVER`. An open `renderD129` alone is
+weak evidence -- the node gets opened during capability probing even when rendering happens
+elsewhere. `nvidia-smi` showing real memory against the process is the reliable signal.
 
-```bash
-__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia \
-  ros2 launch aws_robomaker_small_warehouse_world small_warehouse.launch.py
-```
+Measured here, RTX 3070 + Intel iGPU, cameras bridged so they actually render:
 
-The variables are inherited by the `ign gazebo` subprocess that the launch file starts,
-so setting them on the `ros2 launch` command is enough. Confirm the offload actually took
-effect before trusting any timing:
+| How it was launched | RTF | Where the server rendered |
+| :------------------ | :-- | :------------------------ |
+| `headless:=True`, no flags | **0.90** | NVIDIA, EGL picks it automatically |
+| `headless:=True` + offload vars | 0.65 | NVIDIA (same 201 MiB) |
+| GUI, no flags | 0.40 | GUI path on Intel |
+| GUI + offload vars | 0.27 | NVIDIA, server and GUI |
+
+("offload vars" = `__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia`. The two
+headless rows are 8-sample means; the GUI rows are single runs.)
+
+Two results worth knowing, because both are counter-intuitive:
+
+- **Running the GUI is what costs, not the GPU choice.** Headless is roughly twice the
+  real-time factor of any GUI configuration: the GUI's 3D view re-renders the whole scene
+  every frame on top of the two camera sensors.
+- **The offload variables make things slower in every configuration measured** -- 0.65 vs
+  0.90 headless, 0.27 vs 0.40 with the GUI. They are also redundant for the server: both
+  headless runs showed the identical 201 MiB against `ign gazebo server` in `nvidia-smi`
+  and the same `renderD129`, so the server was on the discrete card either way. The
+  variables only add the GLX offload path, whose frames must be copied back across the bus
+  to the Intel-driven display. Do not set them for headless work; measure before assuming
+  offload helps anywhere.
+
+The GLX offload variables only affect GLX clients such as the GUI and `glxinfo`:
 
 ```bash
 __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia glxinfo -B | grep "OpenGL renderer"
-# expect an NVIDIA renderer string, not Intel
-
-ign topic -e -t /stats -n 4 | grep real_time_factor   # compare against the table above
+# NVIDIA GeForce RTX 3070 Laptop GPU/PCIe/SSE2   <- offload working
 ```
 
-Note `nvidia-smi` alone is a weak check: a GPU that is present and idle still reports
-fine. The renderer string is what tells you the offload worked.
-
-**Headless is a separate path.** `headless:=True` passes `--headless-rendering`, which
-makes Ogre use EGL rather than GLX, and `__GLX_VENDOR_LIBRARY_NAME` does not apply to EGL.
-If offload works in GUI mode but not headless, select the EGL vendor explicitly:
+They do nothing for a headless server, which uses EGL. So for camera-heavy work the
+fastest configuration here is simply:
 
 ```bash
-__EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json \
-  ros2 launch aws_robomaker_small_warehouse_world small_warehouse.launch.py headless:=True
+ros2 launch aws_robomaker_small_warehouse_world small_warehouse.launch.py headless:=True
 ```
 
-> These GPU instructions are **untested on this machine** — it currently has no NVIDIA
-> driver installed, so there was no way to verify them. Everything else in this section
-> (the RTF figures, the 77% split) was measured. Treat the offload commands as a starting
-> point and use the renderer-string check to confirm.
+These are single runs and the real-time factor drifts a few percent between samples, so
+treat small differences as noise and re-measure on your own machine with
+`ign topic -e -t /stats -n 5 | grep real_time_factor`.
 
 If you would rather not touch drivers, the zero-risk alternative is to render fewer
 pixels: 640x480 is a third of the pixels of 1280x720 and should roughly triple the
@@ -354,6 +362,154 @@ VINS will silently misproject. At 640x480 with the same 90 degree FOV those beco
 `fx=fy=320, cx=320, cy=240`.
 
 **Visit the [AWS RoboMaker website](https://aws.amazon.com/robomaker/) to learn more about building intelligent robotic applications with Amazon Web Services.**
+
+### 2D viewer instead of the Gazebo GUI
+
+The GUI costs roughly half the real-time factor (table above), and because every sensor
+rate scales with RTF, that is IMU and camera samples you do not get. `viewer.py` at the
+workspace root replaces it with a top-down 2D view built from ROS topics: the GroundB
+floor texture, obstacle footprints parsed from the world file, the robot from
+`/ground_truth/odometry`, keyboard driving, and a live RTF + per-topic rate panel.
+
+```bash
+ros2 launch aws_robomaker_small_warehouse_world small_warehouse.launch.py headless:=True
+python3 ~/wil_project/viewer.py                       # add --map ros once nav2 is up
+```
+
+Measured against a headless sim: **26% of one core**, taking RTF from 0.436 to 0.418 --
+about a 4% cost, against the GUI's ~55%.
+
+Controls: `w/s` throttle/brake, `a/d` steer, `space` handbrake, middle-drag pan, wheel
+zoom, `f` fit, `g` grid, `o` obstacles, `m` map, `t` trails, `v` VINS, `c` camera
+thumbnail, `r` re-align VINS, left-drag a Nav2 goal, `Esc` cancel, `q` quit.
+
+Two measurements shaped it, and both are worth knowing before changing it:
+
+- **rclpy costs ~2.2 ms of CPU per message**, so message count is the only thing that
+  matters. gz publishes `/clock` at ~700 Hz real-time-equivalent, which is **70% of one
+  core for that single subscription** -- and `use_sim_time:=True` creates one internally
+  whether you ask or not. The viewer therefore does not use sim time and takes its clock
+  from the odometry header stamps it already receives. An early build that did subscribe
+  cost 118% of a core and pushed RTF from 0.44 to 0.32: it was causing the very problem it
+  exists to diagnose.
+- **Repainting is ~8.5 ms a frame** at 1200x900, mostly the full-window blit, so `--fps`
+  is the biggest rendering knob. Default is 15.
+
+The panel judges each topic against `expected_hz * RTF`, because a topic keeping pace with
+a half-speed sim is healthy, not half-broken. Anything reading far below 100% there is a
+real problem; everything moving together just means the sim is slow.
+
+Optional layers, both off by default because of the per-message cost above:
+
+| flag | what it adds | measured cost |
+| :--- | :----------- | :------------ |
+| `--watch-imu` | an `/imu` row in the rate panel | +21% of a core at RTF 0.4, ~+50% at RTF 1.0 |
+| `--thumb cam0` | live camera thumbnail | +9% of a core |
+
+Note `--watch-imu` adds only a RATE row -- the viewer shows no IMU data (no orientation,
+no accel/gyro traces). RTF is the cheaper proxy: every rate measured tracked
+`expected * RTF` at 100-103%, so if RTF is healthy the IMU is keeping up.
+
+### Navigation (Nav2)
+
+```bash
+sudo apt install -y ros-humble-navigation2 ros-humble-nav2-bringup \
+    ros-humble-nav2-smac-planner ros-humble-nav2-regulated-pure-pursuit-controller
+python3 ~/wil_project/bake_map.py
+colcon build --symlink-install --packages-select aws_robomaker_small_warehouse_world
+ros2 launch aws_robomaker_small_warehouse_world nav2.launch.py     # headless by default
+python3 ~/wil_project/viewer.py --map ros                          # left-drag to set a goal
+```
+
+`nav2.launch.py` brings up three layers in one command: the sim (via
+`small_warehouse.launch.py`, `headless` defaulting to True here), the TF tree (via
+`localization_tf.launch.py`), and seven Nav2 servers plus a lifecycle manager. Goals flow
+`bt_navigator -> planner_server (Smac Hybrid-A*) -> controller_server (RPP) ->
+velocity_smoother -> /cmd_vel -> cmd_vel_bridge`. Use `start_sim:=False` to attach to a
+sim that is already running.
+
+Static map only -- the robot has no lidar, so the costmap runs a static layer plus
+inflation and nothing else -- and localization is ground truth, not AMCL, so that planner
+and controller behaviour can be judged without localization error in the way. See
+`launch/localization_tf.launch.py` (the file to replace when you want AMCL or VINS
+instead) and the header of `params/nav2_ackermann.yaml`, which explains why the lookahead
+and smoother settings are load-bearing rather than taste.
+
+`bake_map.py` slices the world's collision meshes at robot height rather than using either
+existing map: `maps/002` is in a different frame entirely, and `maps/005` is a SLAM product
+in which the shelves are hollow post outlines, so planning on it routes the robot into
+0.94 m aisles it cannot turn around in.
+
+**Verified against the installed nav2 1.1.20.** Every plugin parameter name in
+`nav2_ackermann.yaml` was checked against the installed libraries; all seven servers reach
+`active`, SmacPlannerHybrid/Dubin, RPP and SimpleSmoother all load, and both costmaps come
+up 286x423 at 0.05 m, origin (-7.0, -10.5) -- i.e. exactly the baked map. Best measured
+run, three goals from spawn:
+
+| goal | result | speed (sim) | final error |
+| :--- | :----- | :---------- | :---------- |
+| hall centre `(-0.72, -2.47)` | SUCCEEDED | 0.58 m/s | 0.30 m |
+| S-curve past ShelfF `(-3.58, -5.32)` | SUCCEEDED | 0.52 m/s | 0.29 m |
+| far corner `(0.23, -9.32)` | SUCCEEDED | 0.50 m/s | 0.29 m |
+
+against `desired_linear_vel: 0.60` and `xy_goal_tolerance: 0.30`.
+
+#### Four traps, all of which cost real debugging time here
+
+**Measure in SIM time, not wall time.** This is the big one. At RTF 0.2-0.4 a 12 m goal
+legitimately takes 2-3 minutes of wall clock. Timing a goal on the wall clock, or dividing
+distance by wall seconds, makes a perfectly healthy controller look broken -- it reports
+~0.10 m/s and "timeouts" for something actually running at 0.5 m/s and arriving fine.
+Budget goals in sim seconds, taken from `/ground_truth/odometry` header stamps.
+
+**`bond_timeout` must be generous.** The nav2_bringup default of 4.0 s is checked in WALL
+time while the sim runs at RTF 0.2-0.4, so a server merely descheduled for a moment looks
+dead. Observed on a loaded desktop:
+
+```
+CRITICAL FAILURE: SERVER map_server IS DOWN after not receiving a heartbeat for 4000 ms.
+Shutting down related nodes.
+```
+
+after which `bt_navigator` sits `inactive` and every goal comes back REJECTED -- which
+looks nothing like a timeout. Set to 20.0 here.
+
+**Goal HEADING decides feasibility, not just position.** A car cannot arrive at an
+arbitrary yaw in a tight spot. Planning *to* the spawn `(1.80, 9.00)`, which has only
+0.55 m of clearance, succeeds at yaw +45 and +90 deg and fails at 0, 135, 180 and -90 --
+each failure burning the full `max_planning_time` (3 s) before reporting "no valid path
+found". Position is fine; the heading is what is unreachable. When scripting goals, use
+the bearing from the robot to the goal rather than a fixed yaw.
+
+**The curvature bound.** `AckermannSteering` does not reject an infeasible turn -- it
+clamps the radius and the robot quietly under-turns, with no error anywhere. The check:
+
+```bash
+ros2 topic echo /cmd_vel      # require |angular.z| / |linear.x| <= 1.6673
+```
+
+Note 1.6673 is `tan(35 deg)/0.42`, the REAR-AXLE bound. Nav2 plans `base_link`, which sits
+mid-wheelbase and sweeps the larger radius 0.6355 m (curvature 1.5736). Do not mix them.
+Also: slowing down makes saturation *worse*, since the steering angle depends on
+`angular.z / linear.x` -- lowering `desired_linear_vel` is never the fix.
+
+#### Known open issues
+
+- **Terminal approach exceeds the curvature bound.** Worst observed `|wz|/|vx|` is 6.67
+  against a limit of 1.6673, which is `min_approach_linear_velocity` (0.15) against a yaw
+  rate still allowed to reach 1.00. Near the goal the remaining path is shorter than
+  `min_lookahead_dist`, so the `k <= 2/L_d` guarantee stops holding. The robot still
+  reaches goals within tolerance -- the plugin clamps and RPP corrects at 20 Hz -- but it
+  applies full steering lock while crawling. Fixing it properly means bounding the yaw
+  rate as a function of commanded speed rather than with a constant cap.
+- **`use_collision_detection` is currently `true` and is not settled.** With it on, one
+  run logged 155-195 "detected collision ahead!" -> "Controller patience exceeded" ->
+  abort -> backup -> replan, in corridors with 0.7-4.9 m of real clearance; with it off,
+  three goals in a row succeeded and the worst costmap cost under the robot footprint was
+  95, never reaching the inscribed value of 99. That argues the vetoes were false
+  positives against the controller's own corner-cutting. But the two runs were not
+  otherwise identical, and the comparison run with it back on was invalidated by the
+  `bond_timeout` failure above, so this needs one clean A/B before drawing a conclusion.
 
 ## Notes
 - Lighting might vary on different system(s) (e.g brighter on system without CPU and darker on system with GPU)

@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Turn Gazebo's ground-truth odometry into a TF tree Nav2 can localize against.
+
+    ros2 run aws_robomaker_small_warehouse_world ground_truth_localization
+
+WHY THIS EXISTS
+    Nothing in this workspace publishes /tf. The robot's OdometryPublisher plugin
+    (models/ackermann_robot/model.sdf) does emit a TF topic -- gz `Pose_V` on
+    /ground_truth/pose -- and ros_gz_bridge CAN map that to tf2_msgs/TFMessage:
+
+        /ground_truth/pose@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V
+
+    So why a node? Because Nav2 needs a SECOND thing the bridge cannot give it.
+    nav2_controller builds an OdomSmoother on the topic `odom`, and RPP uses that
+    feedback for its velocity-scaled lookahead. With nothing on /odom, RPP thinks
+    the robot is permanently stopped and collapses to min_lookahead_dist. Meanwhile
+    /ground_truth/odometry has to stay exactly where it is, because that is what
+    VINS is scored against. One node does both jobs and costs nothing.
+
+    The launch file keeps the bridge form commented out as a cross-check: if this
+    node's TF looks wrong, bridging /ground_truth/pose tells you whether the fault
+    is in gz or in here.
+
+WHY map->odom IS EXACTLY IDENTITY
+    Not an approximation. The OdometryPublisher block sets no <xyz_offset> and no
+    <rpy_offset>, so its odom frame IS the gz world frame, which is the frame the
+    baked map is expressed in. Ground truth does not drift, so there is nothing for
+    a localizer to correct and the transform is a constant.
+
+    This is of course cheating -- deliberately. It isolates the planner and the
+    controller so that when navigation misbehaves you know it is not localization.
+    Swap this node for AMCL or for VINS when you want the honest version; that is
+    why it lives in its own launch file.
+
+THE FRAME TRAP
+    <robot_base_frame> in model.sdf is base_footprint, which is also the URDF's ROOT
+    link. That is what makes the chain odom -> base_footprint -> base_link clean.
+    Change it to base_link and that link gets two parents (odom and base_footprint),
+    tf2 starts warning, and Nav2's lookups go non-deterministic. Leave it alone.
+"""
+
+import math
+
+import rclpy
+from geometry_msgs.msg import TransformStamped
+from nav_msgs.msg import Odometry
+from rclpy.node import Node
+from rclpy.qos import (DurabilityPolicy, HistoryPolicy, QoSProfile,
+                       ReliabilityPolicy)
+from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
+
+# The gz bridge publishes RELIABLE/VOLATILE (it does not use a sensor-data profile).
+# Requesting BEST_EFFORT is compatible with that and with anything else, so this
+# subscription cannot be the one that silently receives nothing.
+ODOM_QOS = QoSProfile(history=HistoryPolicy.KEEP_LAST, depth=5,
+                      reliability=ReliabilityPolicy.BEST_EFFORT,
+                      durability=DurabilityPolicy.VOLATILE)
+
+
+class GroundTruthLocalization(Node):
+
+    def __init__(self):
+        super().__init__('ground_truth_localization')
+
+        self.declare_parameter('map_frame', 'map')
+        self.declare_parameter('odom_frame', 'odom')
+        self.declare_parameter('base_frame', 'base_footprint')
+        self.declare_parameter('publish_map_odom', True)
+        self.declare_parameter('flatten_2d', False)
+        self.declare_parameter('input_topic', '/ground_truth/odometry')
+        self.declare_parameter('output_topic', '/odom')
+
+        g = lambda n: self.get_parameter(n).value
+        self.map_frame = g('map_frame')
+        self.odom_frame = g('odom_frame')
+        self.base_frame = g('base_frame')
+        self.flatten = g('flatten_2d')
+
+        self.tf = TransformBroadcaster(self)
+        self.pub = self.create_publisher(Odometry, g('output_topic'), 10)
+        self.sub = self.create_subscription(
+            Odometry, g('input_topic'), self.on_odom, ODOM_QOS)
+
+        if g('publish_map_odom'):
+            # StaticTransformBroadcaster latches, so this one message is enough and
+            # a subscriber that starts later still gets it.
+            self.static_tf = StaticTransformBroadcaster(self)
+            t = TransformStamped()
+            t.header.stamp = self.get_clock().now().to_msg()
+            t.header.frame_id = self.map_frame
+            t.child_frame_id = self.odom_frame
+            t.transform.rotation.w = 1.0          # identity; see the docstring
+            self.static_tf.sendTransform(t)
+
+        self.n = 0
+        self.get_logger().info(
+            '%s -> TF %s->%s and %s (map->odom identity: %s, flatten_2d: %s)'
+            % (g('input_topic'), self.odom_frame, self.base_frame,
+               g('output_topic'), g('publish_map_odom'), self.flatten))
+
+    def on_odom(self, msg):
+        p = msg.pose.pose.position
+        if not all(map(math.isfinite, (p.x, p.y, p.z))):
+            self.get_logger().warn('non-finite pose, dropped', throttle_duration_sec=5.0)
+            return
+
+        t = TransformStamped()
+        # Copy the stamp verbatim: it is already sim time, whatever use_sim_time
+        # says here. Restamping with our own clock is how you earn TF_OLD_DATA.
+        t.header.stamp = msg.header.stamp
+        t.header.frame_id = self.odom_frame
+        t.child_frame_id = self.base_frame
+        t.transform.translation.x = p.x
+        t.transform.translation.y = p.y
+        t.transform.translation.z = 0.0 if self.flatten else p.z
+        q = msg.pose.pose.orientation
+        if self.flatten:
+            # keep yaw only -- <dimensions>3</dimensions> means the plugin reports
+            # transient roll/pitch under acceleration. Nav2 takes yaw anyway, so this
+            # is off by default; it exists for consumers that trip over a tilted base.
+            yaw = math.atan2(2.0 * (q.w * q.z + q.x * q.y),
+                             1.0 - 2.0 * (q.y * q.y + q.z * q.z))
+            t.transform.rotation.z = math.sin(yaw / 2.0)
+            t.transform.rotation.w = math.cos(yaw / 2.0)
+        else:
+            t.transform.rotation = q
+        self.tf.sendTransform(t)
+
+        out = Odometry()
+        out.header = msg.header
+        out.header.frame_id = self.odom_frame
+        out.child_frame_id = self.base_frame
+        out.pose.pose = msg.pose.pose
+        out.twist.twist = msg.twist.twist
+        # An all-zero covariance is legal but some consumers dislike it; ground truth
+        # has no real uncertainty, so this is a token non-zero diagonal.
+        for i in range(6):
+            out.pose.covariance[i * 7] = 1e-6
+            out.twist.covariance[i * 7] = 1e-6
+        self.pub.publish(out)
+
+        self.n += 1
+        if self.n == 1:
+            self.get_logger().info('first pose: x=%.3f y=%.3f' % (p.x, p.y))
+
+
+def main():
+    rclpy.init()
+    node = GroundTruthLocalization()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

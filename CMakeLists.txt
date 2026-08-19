@@ -13,14 +13,14 @@ find_package(ament_cmake REQUIRED)
 # Install
 ################################################################################
 install(
-  DIRECTORY launch models worlds maps urdf
+  DIRECTORY launch models worlds maps urdf params
   DESTINATION share/${PROJECT_NAME}
 )
 
 # PROGRAMS, not FILES, so the executable bit survives; lib/, not share/, because
 # that is where `ros2 run <pkg> <name>` looks.
 install(
-  PROGRAMS scripts/teleop
+  PROGRAMS scripts/teleop scripts/ground_truth_localization
   DESTINATION lib/${PROJECT_NAME}
 )
 

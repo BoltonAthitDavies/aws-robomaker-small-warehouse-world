@@ -1,0 +1,373 @@
+# Nav2 for the ackermann_robot in small_warehouse -- static map, no lidar, ground truth.
+#
+# THE ONE CONSTRAINT THAT EXPLAINS THIS WHOLE FILE
+#     wheel_base L = 0.42, steering limit d = 0.6109 rad (35 deg). There are TWO
+#     curvature numbers here and they are easy to conflate -- they differ only in
+#     which point on the vehicle you measure:
+#
+#         rear axle   k = tan(d)/L        = 1.6673 1/m   (R = 0.5998 m)
+#         base_link   k = 1/sqrt(R^2+(L/2)^2) = 1.5736 1/m   (R = 0.6355 m)
+#
+#     The /cmd_vel bound -- the one AckermannSteering actually clamps against, and
+#     the one to assert on when checking whether the controller is asking for the
+#     impossible -- is the REAR AXLE value, 1.6673, because that is the frame the
+#     bicycle model in drive.py and in the plugin is written about:
+#
+#         |angular.z| / |linear.x|  <=  1.6673
+#
+#     Nav2, however, plans the path of base_link, which sits mid-wheelbase and
+#     therefore sweeps the LARGER radius 0.6355 m. That is the number
+#     minimum_turning_radius and min_lookahead_dist below are derived from.
+#
+#     Both bounds are INDEPENDENT OF SPEED. AckermannSteering does not reject a
+#     Twist that violates it -- it clamps the turning radius internally and the
+#     robot silently under-turns. So nothing errors; the robot just misses corners.
+#
+#     Two traps follow, and both look like controller bugs when you hit them:
+#
+#     1. SLOWING DOWN MAKES IT WORSE. d = atan(L*k), and k = w/v, so reducing v at
+#        fixed w RAISES the demanded steering angle. If you see saturation, do NOT
+#        "fix" it by lowering desired_linear_vel. Raise min_lookahead_dist.
+#     2. v -> 0 with w != 0 means k -> infinity: full lock at a standstill. That is
+#        why use_rotate_to_heading MUST be false and why velocity_smoother must
+#        scale all components together (scale_velocities: true).
+#
+#     The bound is enforced geometrically by RPP's lookahead: it emits
+#     k = 2*y/L_d^2 with |y| <= L_d, so k_max = 2/L_d. With the planned frame's
+#     minimum radius 0.6355 m, L_d >= 2*0.6355 = 1.271 m guarantees feasibility.
+#     Hence min_lookahead_dist 1.30.
+#
+# VERIFY BEFORE FIRST RUN
+#     Nav2 was not installed when this was written, so the plugin parameter NAMES
+#     could not be checked. Diff against the authoritative 1.1.20 set:
+#         diff <(cat this) /opt/ros/humble/share/nav2_bringup/params/nav2_params.yaml
+#         ros2 param list /controller_server
+#     Lines marked "UNVERIFIED" are the ones to delete first if a server refuses to
+#     configure with an unknown-parameter error.
+
+bt_navigator:
+  ros__parameters:
+    use_sim_time: true
+    global_frame: map
+    robot_base_frame: base_link
+    odom_topic: /odom
+    bt_loop_duration: 10
+    default_server_timeout: 20
+    # UNVERIFIED shape: Humble uses `navigators` + a per-navigator plugin block;
+    # Galactic used default_bt_xml_filename only. Copy plugin_lib_names verbatim
+    # from the installed nav2_params.yaml -- a wrong list gives an opaque
+    # "Error loading XML file" the first time you send a goal.
+    navigators: ["navigate_to_pose", "navigate_through_poses"]
+    navigate_to_pose:
+      plugin: "nav2_bt_navigator/NavigateToPoseNavigator"
+    navigate_through_poses:
+      plugin: "nav2_bt_navigator/NavigateThroughPosesNavigator"
+
+controller_server:
+  ros__parameters:
+    use_sim_time: true
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.50      # holonomic-only; kept high so it is ignored
+    min_theta_velocity_threshold: 0.001
+    failure_tolerance: 0.30
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugins: ["general_goal_checker"]
+    controller_plugins: ["FollowPath"]
+
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.50
+      movement_time_allowance: 15.0     # a car needs room and time to make progress
+
+    general_goal_checker:
+      # The name must match the goal_checker_id the stock BT's FollowPath passes.
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.30
+      # 0.60 rad ~ 34 deg, deliberately loose. With no rotate-in-place the final
+      # heading comes entirely from how well RPP tracked the last Dubins segment;
+      # a tight tolerance produces a robot that circles the goal forever.
+      yaw_goal_tolerance: 0.60
+      stateful: true
+
+    FollowPath:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      # note: RPP registers with "::", Smac below registers with "/". Not a typo.
+      desired_linear_vel: 0.60
+      min_approach_linear_velocity: 0.15   # NOT the 0.05 default: k -> inf near goal
+      approach_velocity_scaling_dist: 0.60
+
+      use_velocity_scaled_lookahead_dist: true
+      lookahead_time: 2.20                 # 0.60 * 2.20 = 1.32
+      lookahead_dist: 1.30
+      # MEASURED, and the value matters in BOTH directions -- see the sweep below.
+      #
+      # RPP emits k = 2*y/L_d^2 with |y| <= L_d, so k_max = 2/L_d. To stay inside
+      # the rear-axle bound of 1.6673 you need L_d >= 2/1.6673 = 1.20 m. 1.30
+      # keeps margin.
+      #
+      # Shortening it does NOT help, which is worth recording because it looks
+      # like it should. Measured with L_d = 0.60: the worst commanded curvature hit
+      # 6.67 1/m, four times the limit. The cause is the approach phase --
+      # min_approach_linear_velocity 0.15 m/s against a yaw rate still allowed to
+      # reach 1.00 rad/s is k = 1.00/0.15 = 6.67. The plugin then applies full lock
+      # at a crawl, the robot under-turns, misses the goal and circles it until the
+      # goal times out. This is exactly the "v -> 0 with w != 0" trap in the header.
+      #
+      # Sweep, all with the same goals (see the README):
+      #   L_d 1.30, collision detection ON  -> paralysis, 155 vetoes, 0.10 m/s
+      #   L_d 0.90, collision detection ON  -> 2/4 goals, still 0.08-0.10 m/s
+      #   L_d 0.60, collision detection ON  -> 2/4 goals, 195 vetoes
+      #   L_d 0.60, collision detection OFF -> k peaks at 6.67, robot circles goals
+      #   L_d 1.30, collision detection OFF -> see the README table
+      min_lookahead_dist: 1.30
+      max_lookahead_dist: 2.00
+
+      use_regulated_linear_velocity_scaling: true
+      regulated_linear_scaling_min_radius: 1.20
+      regulated_linear_scaling_min_speed: 0.25
+      use_cost_regulated_linear_velocity_scaling: false   # static map; nothing to dodge
+
+      # Both false. use_rotate_to_heading true would deadlock: it commands w with
+      # v = 0, the plugin applies full lock at a standstill, the robot never rotates
+      # and the controller never leaves the state. (Humble also refuses to have
+      # use_rotate_to_heading and allow_reversing both true.)
+      use_rotate_to_heading: false
+      allow_reversing: false
+      rotate_to_heading_min_angle: 3.15    # unreachable, belt and braces
+      max_angular_accel: 1.50
+      max_robot_pose_search_dist: 5.0
+      transform_tolerance: 0.20
+
+      # OFF, and this is a considered choice specific to THIS configuration --
+      # re-enable it the moment you add a sensor or anything that moves.
+      #
+      # It is redundant here: the map is baked from the world's own collision
+      # meshes so it is exact and complete, Smac already does a full SE(2)
+      # FOOTPRINT collision check against this same costmap when it plans, there
+      # are no sensors, and nothing in this world moves. Nothing can appear that
+      # was not planned around.
+      #
+      # What it actually did was veto the controller's own corner-cutting against
+      # the inflation ring -- 195 "detected collision ahead!" in one 10-minute run
+      # -> "Controller patience exceeded" -> abort -> backup -> replan, holding the
+      # robot at 0.10 m/s against a 0.60 m/s target with metres of real clearance.
+      # Tried first at lookahead 1.30, then 0.90, then 0.60: the vetoes persisted
+      # at every setting, so the lookahead was not the cause.
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 1.00
+
+planner_server:
+  ros__parameters:
+    use_sim_time: true
+    expected_planner_frequency: 1.0     # the BT drives replanning; 20.0 just warns
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      tolerance: 0.30
+      downsample_costmap: false
+      allow_unknown: false              # the bake emits no unknown space at all
+      max_iterations: 1000000
+      max_on_approach_iterations: 1000
+      max_planning_time: 3.0
+      motion_model_for_search: "DUBIN"
+      # Switch to REEDS_SHEPP (with reverse_penalty) if goals directly behind the
+      # robot near a wall fail -- that is Dubins' one real weakness. Forward-only is
+      # the default because this is a forward-facing stereo VIO rig and reversing
+      # blind is the opposite of what it is for.
+      angle_quantization_bins: 72       # 5 deg; arc chord 0.0654 m > 0.05 resolution
+      # Kinematic floor is 0.6355 m at base_link (mid-wheelbase), NOT the 0.5998 m
+      # rear-axle figure. 0.75 leaves ~4.7 deg of steering authority for the
+      # controller to correct tracking error with; planning at the exact limit means
+      # any lateral error at all is unrecoverable.
+      minimum_turning_radius: 0.75
+      reverse_penalty: 2.0
+      change_penalty: 0.0
+      non_straight_penalty: 1.20
+      cost_penalty: 2.0
+      retrospective_penalty: 0.015
+      analytic_expansion_ratio: 3.5
+      analytic_expansion_max_length: 3.0
+      # The map never changes, so the heuristic is reusable across every plan.
+      # This is exactly the case the flag was written for.
+      cache_obstacle_heuristic: true
+      smooth_path: true
+      smoother:                          # UNVERIFIED sub-block keys
+        max_iterations: 1000
+        w_smooth: 0.3
+        w_data: 0.2
+        tolerance: 1.0e-10
+      # Do NOT add allow_primitive_interpolation, use_quadratic_cost_penalty or
+      # downsample_obstacle_heuristic: those are Iron/Jazzy, and Nav2 rejects
+      # unknown parameters at declare time.
+
+smoother_server:
+  ros__parameters:
+    use_sim_time: true
+    smoother_plugins: ["simple_smoother"]
+    simple_smoother:
+      plugin: "nav2_smoother::SimpleSmoother"
+      tolerance: 1.0e-10
+      max_its: 1000
+      do_refinement: true
+    # Present only so the stock BT loads if it references SmoothPath. Do not put
+    # SmoothPath into a custom BT: neither SimpleSmoother nor SavitzkyGolay is
+    # curvature-constrained, and both will happily turn a feasible Dubins path into
+    # one this car cannot follow.
+
+behavior_server:
+  ros__parameters:
+    use_sim_time: true
+    global_frame: odom                  # matches the local costmap; see below
+    robot_base_frame: base_link
+    transform_tolerance: 0.20
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
+    spin:
+      plugin: "nav2_behaviors/Spin"     # Humble renamed nav2_recoveries/* -> nav2_behaviors/*
+    backup:
+      plugin: "nav2_behaviors/BackUp"
+    drive_on_heading:
+      plugin: "nav2_behaviors/DriveOnHeading"
+    wait:
+      plugin: "nav2_behaviors/Wait"
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 1.0
+    min_rotational_vel: 0.4
+    rotational_acc_lim: 1.5
+    # All four are registered so the stock BT finds every action server it refers
+    # to, but expect `spin` to ALWAYS fail on this platform -- it commands rotation
+    # in place, which a car cannot do. The RecoveryNode then falls through to
+    # `backup`, which is the one genuinely useful recovery here (straight-line
+    # reverse, zero yaw rate, perfectly feasible). Seeing Spin fail is correct
+    # behaviour, not a bug to chase.
+
+velocity_smoother:
+  ros__parameters:
+    use_sim_time: true
+    smoothing_frequency: 20.0
+    # MANDATORY on this platform. With the default false, every start-from-rest
+    # ramps v up from 0 while w passes through unchanged, so k = w/v -> infinity and
+    # the robot slams to FULL STEERING LOCK at the start of every single motion.
+    # Scaling all components by the same factor preserves k, and therefore preserves
+    # the steering angle.
+    scale_velocities: true
+    feedback: "OPEN_LOOP"
+    max_velocity: [0.60, 0.0, 1.00]     # 1.00 = 1.6673 * 0.60, the fastest feasible yaw
+    min_velocity: [-0.60, 0.0, -1.00]
+    max_accel: [0.80, 0.0, 2.00]
+    max_decel: [-1.50, 0.0, -2.50]
+    odom_topic: "odom"                  # published by ground_truth_localization
+    odom_duration: 0.10
+    deadband_velocity: [0.0, 0.0, 0.0]
+    velocity_timeout: 1.0               # zeroes the robot if nav2 dies mid-goal
+
+map_server:
+  ros__parameters:
+    use_sim_time: true
+    yaml_filename: ""                   # set by nav2.launch.py from the `map` arg
+
+lifecycle_manager_navigation:
+  ros__parameters:
+    use_sim_time: true
+    autostart: true
+    # 4.0 (the nav2_bringup default) is too tight for this setup and WILL tear the
+    # whole stack down spuriously. The bond heartbeat is checked in WALL time while
+    # the sim runs at RTF 0.2-0.4 under load, so a server that is merely descheduled
+    # for a moment looks dead. Observed exactly that:
+    #   CRITICAL FAILURE: SERVER map_server IS DOWN after not receiving a heartbeat
+    #   for 4000 ms. Shutting down related nodes.
+    # after which bt_navigator sits inactive and every goal is REJECTED, which looks
+    # nothing like a timeout and sends you hunting the wrong bug.
+    bond_timeout: 20.0
+    attempt_respawn_reconnection: true
+    # ONE manager, because with no AMCL there is no separate localization stage.
+    # map_server first: the static layers need the map. Not listed, correctly:
+    # global_costmap/local_costmap are child lifecycle nodes owned by
+    # planner_server/controller_server, and amcl does not exist.
+    node_names:
+      - map_server
+      - controller_server
+      - smoother_server
+      - planner_server
+      - behavior_server
+      - bt_navigator
+      - velocity_smoother
+
+# ---------------------------------------------------------------------------
+# COSTMAPS
+#
+# Both are NON-ROLLING and sized to the whole world. That is unusual, and here is
+# why it is right: there is no sensor and nothing is dynamic, so a rolling window's
+# only purpose -- bounding the cost of integrating live sensor data -- buys nothing.
+# The entire world is 286x423 = 121k cells, which is trivial. Meanwhile a rolling
+# local costmap would let the 1.30 m carrot fall outside the window near the edges,
+# which is a real and irritating failure. As a bonus both costmap topics become
+# identical, so the viewer only needs one.
+#
+# footprint, NOT robot_radius. True collision extent is x in [-0.30, +0.506] (the
+# camera boom) and y in +/-0.2425 (the wheels), giving a circumscribed radius of
+# 0.54 m -- but the spawn pose has only 0.55 m of clearance to ClutteringA_01_017.
+# A robot_radius of 0.54 would make the very first ComputePathToPose report an
+# invalid start about half the time. The rectangle below is a conservative superset.
+# ---------------------------------------------------------------------------
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      use_sim_time: true
+      global_frame: map
+      robot_base_frame: base_link
+      update_frequency: 2.0
+      publish_frequency: 1.0
+      rolling_window: false
+      # The static layer resizes the master grid to the incoming map anyway, so
+      # these are overridden in practice. Set them so a run WITHOUT the static layer
+      # degrades to something sane instead of a 5x5 m box at the origin.
+      width: 15
+      height: 22
+      origin_x: -7.0
+      origin_y: -10.5
+      resolution: 0.05
+      footprint: "[[-0.31, 0.25], [0.52, 0.25], [0.52, -0.25], [-0.31, -0.25]]"
+      footprint_padding: 0.01
+      plugins: ["static_layer", "inflation_layer"]
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: true
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        # Must exceed the padded circumscribed radius (0.637) or Smac's
+        # findCircumscribedCost() returns a nonsense threshold.
+        inflation_radius: 0.80
+      always_send_full_costmap: true
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      use_sim_time: true
+      # global_frame odom on a NON-rolling costmap would normally be wrong. It is
+      # safe here only because map->odom is a permanent, exact identity (the gz
+      # OdometryPublisher sets no xyz/rpy offset, so its odom frame IS the world
+      # frame). Keeping odom also avoids having to chase behavior_server.global_frame.
+      global_frame: odom
+      robot_base_frame: base_link
+      update_frequency: 2.0
+      publish_frequency: 1.0
+      rolling_window: false
+      width: 15
+      height: 22
+      origin_x: -7.0
+      origin_y: -10.5
+      resolution: 0.05
+      footprint: "[[-0.31, 0.25], [0.52, 0.25], [0.52, -0.25], [-0.31, -0.25]]"
+      footprint_padding: 0.01
+      plugins: ["static_layer", "inflation_layer"]
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: true
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.80
+      always_send_full_costmap: true
