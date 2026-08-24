@@ -380,11 +380,51 @@ python3 ~/wil_project/viewer.py                       # add --map ros once nav2 
 Measured against a headless sim: **26% of one core**, taking RTF from 0.436 to 0.418 --
 about a 4% cost, against the GUI's ~55%.
 
-Controls: `w/s` throttle/brake, `a/d` steer, `space` handbrake, middle-drag pan, wheel
-zoom, `f` fit, `[` `]` rotate the view 90 deg, `g` grid, `o` obstacles, `m` map, `t`
-trails, `v` VINS, `c` camera thumbnail, `r` re-align VINS, left-drag a Nav2 goal,
-shift-left-drag to queue a waypoint, `Enter` plan then drive the route, `Backspace`
-drop the last waypoint, `Delete` clear the route, `Esc` cancel, `q` quit.
+#### Controls
+
+Driving. The robot is Ackermann-steered, so you must be moving to steer.
+
+| Key | Effect |
+| :-- | :----- |
+| `w` / `↑` | throttle |
+| `s` / `↓` | brake, then reverse |
+| `a` / `←`, `d` / `→` | steer left / right |
+| `space` | handbrake -- zero the speed and drop every held key |
+
+Navigation. See [Waypoint routes](#waypoint-routes-and-planning-before-the-robot-moves) below.
+
+| Input | Effect |
+| :---- | :----- |
+| left-drag | set a Nav2 goal; the drag direction is the goal heading, like RViz's 2D Goal Pose |
+| shift-left-drag | append a waypoint to a route instead of going now. Drag pins the heading, a bare shift-click derives it. |
+| `Enter` | plan the queued route **without moving**; press again to drive it |
+| `Backspace` | drop the last waypoint |
+| `Delete` | clear the route |
+| `Esc` | cancel the drag in progress, or else the active goal |
+
+View.
+
+| Input | Effect |
+| :---- | :----- |
+| middle-drag | pan |
+| wheel | zoom about the cursor |
+| `f` | fit to window |
+| `[` `]` | rotate the view by 90 deg (see `--rotate`) |
+
+Layers. All toggles.
+
+| Key | Effect |
+| :-- | :----- |
+| `g` | grid |
+| `o` | obstacle footprints |
+| `m` | map overlay (needs `--map`) |
+| `t` | trails |
+| `v` | VINS overlay |
+| `c` | camera thumbnail |
+| `r` | re-align VINS to ground truth |
+
+Quit with `q` or `Ctrl-C`. The viewer also stops the robot by itself when the window
+loses focus, rather than letting it coast.
 
 #### Viewer arguments
 
