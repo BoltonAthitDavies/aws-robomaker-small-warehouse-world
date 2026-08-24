@@ -102,8 +102,9 @@ ros2 launch aws_robomaker_small_warehouse_world small_warehouse.launch.py
 | `bridge_ground_truth` | `True` (`False` for `no_roof_*`) | Publish the robot's true-pose odometry on ROS as `/ground_truth/odometry`. |
 | `max_speed` | `10.0` | Robot speed cap in m/s, forward and reverse. |
 | `max_accel` | `3.0` | Robot acceleration cap in m/s². Decides how much run-up the top speed needs. |
+| `bridge_model_poses` | `False` | Bridge gz's dynamic model poses onto ROS as a `TFMessage`, so `viewer.py --live-poses` can draw MOVING models where they actually are. Only useful if you have made something in the world non-static. |
 
-Both launch files accept all nine. For example:
+Both launch files accept all ten. For example:
 
 ```bash
 ros2 launch aws_robomaker_small_warehouse_world no_roof_small_warehouse.launch.py headless:=True
@@ -380,8 +381,69 @@ Measured against a headless sim: **26% of one core**, taking RTF from 0.436 to 0
 about a 4% cost, against the GUI's ~55%.
 
 Controls: `w/s` throttle/brake, `a/d` steer, `space` handbrake, middle-drag pan, wheel
-zoom, `f` fit, `g` grid, `o` obstacles, `m` map, `t` trails, `v` VINS, `c` camera
-thumbnail, `r` re-align VINS, left-drag a Nav2 goal, `Esc` cancel, `q` quit.
+zoom, `f` fit, `[` `]` rotate the view 90 deg, `g` grid, `o` obstacles, `m` map, `t`
+trails, `v` VINS, `c` camera thumbnail, `r` re-align VINS, left-drag a Nav2 goal,
+shift-left-drag to queue a waypoint, `Enter` plan then drive the route, `Backspace`
+drop the last waypoint, `Delete` clear the route, `Esc` cancel, `q` quit.
+
+#### Viewer arguments
+
+All optional; the defaults are what `python3 viewer.py` with no flags uses.
+
+**Topics and sources**
+
+| Argument | Default | Description |
+| :------- | :------ | :---------- |
+| `--gt-topic` | `/ground_truth/odometry` | Odometry the robot pose, trail and RTF clock come from. The viewer takes its clock from these header stamps rather than `/clock` — see the `/clock` note below. |
+| `--vins-topic` | `auto` | VINS odometry to overlay. `auto` probes `/vins_estimator/odometry`, then `/odometry`, then any other `nav_msgs/Odometry` publisher. |
+| `--cmd-vel-topic` | `/cmd_vel` | Where keyboard teleop publishes, and the topic whose rate is shown. |
+| `--imu-topic` | `/imu` | IMU topic for the `--watch-imu` rate row. |
+| `--cam-info-topics` | `/cam0/camera_info,/cam1/camera_info` | Comma-separated `CameraInfo` topics watched for rates — the cheap way to see whether the cameras are keeping up without subscribing to images. |
+| `--plan-topic` | `/plan` | Nav2 path to draw. |
+| `--pose-topic` | `/world/default/dynamic_pose/info` | Bridged gz dynamic pose feed used by `--live-poses`. |
+| `--world` | packaged `small_warehouse.world` | World file the obstacle footprints are parsed from. |
+| `--texture` | packaged `GroundB_01` PNG | Floor texture tiled under the scene. |
+
+**Navigation and teleop**
+
+| Argument | Default | Description |
+| :------- | :------ | :---------- |
+| `--nav-action` | `/navigate_to_pose` | Nav2 action server that left-drag goals are sent to. |
+| `--nav-frame` | `map` | `frame_id` stamped on those goals. |
+| `--no-nav` | off | Never create the Nav2 action client. Use when Nav2 is not running, or to keep left-drag from sending anything. |
+| `--nav-through-action` | `/navigate_through_poses` | Action used to DRIVE a queued waypoint route. |
+| `--compute-route-action` | `/compute_path_through_poses` | `planner_server` action used to PREVIEW a route without moving the robot. |
+| `--planner-id` | `GridBased` | Planner plugin used for route previews. Must match `planner_plugins` in `nav2_ackermann.yaml`. |
+| `--no-teleop` | off | Never create a `/cmd_vel` publisher at all. Without it the publisher is created lazily on the first key press, so an idle viewer already does not compete with `drive.py`. |
+
+**Map and floor rendering**
+
+| Argument | Default | Description |
+| :------- | :------ | :---------- |
+| `--map` | `none` | `none`, `ros` to subscribe to the Nav2 `/map` topic, or a path to a `map.yaml` to load from disk. Toggled at runtime with `m`. |
+| `--rotate {0,90,180,270}` | `0` | Starting view orientation; also bound to `[` and `]`. See below. |
+| `--floor-ppm` | `100.0` | Pixels per metre the floor texture is baked at. Lower it to cut the one-time build cost and memory of the floor pixmap. |
+| `--floor-flip {none,u,v,uv}` | `none` | Mirror the floor texture's UV directions. COLLADA's UV origin is bottom-left while an image's row 0 is the top, so which way `+v` runs depends on the loader. Because this is a repeating pattern, getting it wrong mirrors the pattern rather than changing scale or offset — set it against a Gazebo screenshot only if you care. |
+| `--no-floor` | off | Skip the floor texture entirely (plain background). |
+
+**Overlays and performance**
+
+| Argument | Default | Description |
+| :------- | :------ | :---------- |
+| `--fps` | `15` | Repaint rate, and the single biggest knob on viewer CPU — see below. |
+| `--thumb {none,cam0,cam1}` | `none` | Live camera thumbnail. Costs ~9% of a core. Toggled at runtime with `c`. |
+| `--thumb-topic` | derived from `--thumb` | Image topic for the thumbnail; defaults to `/<thumb>/image_raw`. Set it to use a camera the `--thumb` choices do not cover. |
+| `--thumb-decimate` | `4` | Keep every Nth pixel in each direction when decoding the thumbnail. Raise it to make an already-subscribed camera cheaper to draw. |
+| `--live-poses` | off | Draw moving models at their live gz pose instead of the pose the world file authored. Needs `bridge_model_poses:=True`. ~13% of a core -- see below. |
+| `--watch-imu` | off | Add an `/imu` row to the rate panel. Costs ~21% of a core at RTF 0.4 and ~45-50% at RTF 1.0 — rclpy is ~2.2 ms per message. RTF tells you the same thing more cheaply. |
+| `--trail-min-step` | `0.02` | Metres of motion before a new trail point is recorded. Raising it keeps long runs' trails shorter. |
+| `--vins-align {first,none}` | `first` | `first` fits a rigid VINS→world transform the first time VINS has moved 0.5 m, so the two trails are comparable; `none` draws VINS in its own frame. Re-align at runtime with `r`. |
+| `--no-sim-time` | off | Ignored — accepted so older command lines still run. The viewer never uses sim time; that is deliberate, for the `/clock` reason below. |
+
+`--rotate {0,90,180,270}` sets the starting orientation, e.g. `--rotate 180` to put the
+world's +y at the bottom of the screen. Only the world layers turn; the panel, scale bar
+and camera thumbnail stay upright, and mouse picking is un-rotated to match, so Nav2 goals
+still land where you click.
 
 Two measurements shaped it, and both are worth knowing before changing it:
 
@@ -405,10 +467,77 @@ Optional layers, both off by default because of the per-message cost above:
 | :--- | :----------- | :------------ |
 | `--watch-imu` | an `/imu` row in the rate panel | +21% of a core at RTF 0.4, ~+50% at RTF 1.0 |
 | `--thumb cam0` | live camera thumbnail | +9% of a core |
+| `--live-poses` | moving models drawn where they actually are | ~13% of a core (~58 Hz feed) |
 
 Note `--watch-imu` adds only a RATE row -- the viewer shows no IMU data (no orientation,
 no accel/gyro traces). RTF is the cheaper proxy: every rate measured tracked
 `expected * RTF` at 100-103%, so if RTF is healthy the IMU is keeping up.
+
+#### Waypoint routes, and planning before the robot moves
+
+Left-drag sends one goal immediately. **Shift**-left-drag queues a waypoint instead,
+and `Enter` plans the whole route *without moving the robot* -- that is
+`ComputePathThroughPoses` on `planner_server`, which is a pure query. Measured: a
+3-waypoint route returned a 241-pose, 24.4 m path with `/ground_truth/odometry`
+unchanged to 16 digits and nothing on `/cmd_vel`. Press `Enter` again to drive it via
+`NavigateThroughPoses`. `Backspace` drops the last waypoint, `Delete` clears the route.
+
+Waypoints are numbered on the map, with a dotted line showing the leg order. A dashed
+ring means the heading was derived automatically; drag instead of clicking to pin one,
+and the ring goes solid.
+
+**Heading is what makes a route plannable, and the viewer derives it for you.** The
+planner is `DUBIN` with `allow_reversing: false`, so it has to *leave* each via-point
+on the heading you give it -- an arbitrary yaw there is the usual reason a route whose
+positions are all reachable will not plan at all. A click-placed waypoint therefore
+gets the bearing *through* the point: towards the next waypoint, or along the incoming
+leg for the last one. Pin a heading only when you actually want a specific arrival
+angle, and expect it to fail more often when you do.
+
+`FollowWaypoints` is deliberately not used, and `nav2_waypoint_follower` is not
+launched. It drives each waypoint as a separate `NavigateToPose` goal, so the robot
+stops and replans at every one and every arrival has to satisfy both the goal checker
+and a feasible Dubins heading. `NavigateThroughPoses` treats them as via-points on one
+path, which is what a car wants.
+
+#### Moving models
+
+By default every footprint is drawn where the **world file** put it, because
+`load_obstacles()` parses the world once at startup. So if you make a model non-static
+and it starts moving -- a `VelocityControl` plugin on a clutter box, say -- the sim
+moves it and the viewer does not show that. `--live-poses` fixes it:
+
+```bash
+ros2 launch aws_robomaker_small_warehouse_world small_warehouse.launch.py \
+    headless:=True bridge_model_poses:=True
+python3 ~/wil_project/viewer.py --live-poses
+```
+
+The feed is gz's `/world/default/dynamic_pose/info`, bridged as a `tf2_msgs/TFMessage`
+whose `child_frame_id` is the model name. It carries **only non-static entities** --
+in the stock world that is the robot and its links, 10 entries here against
+`/world/default/pose/info`'s 77, of which 67 can never move. Measured at ~58 Hz with
+RTF 0.98, the same order as the ground-truth odometry, and it scales with RTF like
+everything else, so the panel judges it against `expected * RTF` as usual.
+
+Two implementation notes, because both are load-bearing:
+
+- Footprints are **not** re-read from the meshes. Each one is stored with the pose the
+  world file authored it at, and a live pose is applied as a rigid transform of that
+  polygon. Rotation is included, and only the *delta* from the authored yaw is applied,
+  so a model authored at a non-zero yaw is not double-rotated.
+- A model is treated as moving only when its live pose differs from its authored pose.
+  That matters because a non-static model sitting still is in the feed every tick, and
+  treating it as live would pull it out of the cached static pixmap for nothing. Models
+  move between the cached layer and the per-frame layer only when that changes.
+
+Nav2 still cannot see any of this. The costmap is a static layer plus inflation, so a
+moving obstacle is invisible to the planner and the robot will drive into it -- and
+`bake_map.py` reads the same authored poses, so the baked map has the obstacle at its
+original spot. Observed while testing: the robot wedged against a drifting clutter box
+with `/ground_truth/odometry` frozen while nav2 cycled Spin and BackUp recoveries
+reporting "Collision Ahead". `--live-poses` is a *diagnostic* -- it lets you see the
+collision coming; it does not make nav2 avoid it.
 
 ### Navigation (Nav2)
 
@@ -462,9 +591,9 @@ distance by wall seconds, makes a perfectly healthy controller look broken -- it
 ~0.10 m/s and "timeouts" for something actually running at 0.5 m/s and arriving fine.
 Budget goals in sim seconds, taken from `/ground_truth/odometry` header stamps.
 
-**`bond_timeout` must be generous.** The nav2_bringup default of 4.0 s is checked in WALL
-time while the sim runs at RTF 0.2-0.4, so a server merely descheduled for a moment looks
-dead. Observed on a loaded desktop:
+**`bond_timeout` must be generous, and it must actually reach the node.** The
+nav2_bringup default of 4.0 s is checked in WALL time while the sim runs at RTF 0.2-0.4,
+so a server merely descheduled for a moment looks dead. Observed on a loaded desktop:
 
 ```
 CRITICAL FAILURE: SERVER map_server IS DOWN after not receiving a heartbeat for 4000 ms.
@@ -473,6 +602,16 @@ Shutting down related nodes.
 
 after which `bt_navigator` sits `inactive` and every goal comes back REJECTED -- which
 looks nothing like a timeout. Set to 20.0 here.
+
+Setting it in `nav2_ackermann.yaml` is not sufficient on its own: `lifecycle_manager` was
+the one node in `nav2.launch.py` launched with an inline parameter dict rather than
+`configured_params`, so the params file never reached it and it silently used the 4.0 s
+default -- and then tore the stack down exactly as above. It now gets `configured_params`
+like every other node. Verify rather than assume, because the failure is silent:
+
+```bash
+ros2 param get /lifecycle_manager_navigation bond_timeout   # must say 20.0, not 4.0
+```
 
 **Goal HEADING decides feasibility, not just position.** A car cannot arrive at an
 arbitrary yaw in a tight spot. Planning *to* the spawn `(1.80, 9.00)`, which has only

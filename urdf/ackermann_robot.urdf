@@ -271,7 +271,8 @@
     </collision>
   </link>
 
-  <!-- cam1: cam0's stereo partner, 93.6 mm to its right. See cam1_joint. -->
+  <!-- cam1: cam0's stereo partner, 93.6 mm to its right, and the camera that
+       sits on the robot centreline. See cam0_joint / cam1_joint. -->
   <link name="cam1">
     <visual>
       <geometry>
@@ -395,11 +396,13 @@
     <origin xyz="0.087 0 0" rpy="0 0 0"/> 
   </joint>
 
-  <!-- cam0 Joint -->
+  <!-- cam0 Joint. The +Y (base left) offset puts cam1, not cam0, on the robot
+       centreline: cam_link2 stays centred, the pair hangs off it to the left by
+       one baseline, and cam1_joint's -0.0936 brings cam1 back to base y=0. -->
   <joint name="cam0_joint" type="fixed">
     <parent link="cam_link2"/>
     <child link="cam0"/>
-    <origin xyz="0 0 0.058" rpy="0 0 0"/>
+    <origin xyz="0 0.0936 0.058" rpy="0 0 0"/>
   </joint>
 
   <!-- cam0_undis Joint -->

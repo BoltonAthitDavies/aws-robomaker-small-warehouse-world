@@ -114,6 +114,7 @@ def generate_launch_description():
     bridge_sensors = LaunchConfiguration('bridge_sensors')
     bridge_cmd_vel = LaunchConfiguration('bridge_cmd_vel')
     bridge_ground_truth = LaunchConfiguration('bridge_ground_truth')
+    bridge_model_poses = LaunchConfiguration('bridge_model_poses')
     robot_name = LaunchConfiguration('robot_name')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -135,6 +136,14 @@ def generate_launch_description():
         'bridge_ground_truth',
         default_value='True',
         description="Bridge the robot's true-pose odometry onto ROS as /ground_truth/odometry")
+
+    declare_bridge_model_poses_cmd = DeclareLaunchArgument(
+        'bridge_model_poses',
+        default_value='False',
+        description='Bridge gz dynamic model poses onto ROS as a TFMessage, so a 2D '
+                    'viewer can draw MOVING models at their live pose instead of '
+                    'the pose authored in the world file. Off by default: it is '
+                    'only useful if something in the world actually moves.')
 
     # The robot's gz topics are scoped by the name the WORLD gives it, which is the
     # <include><name> in small_warehouse.world, not the <model name> in model.sdf.
@@ -270,6 +279,27 @@ def generate_launch_description():
         ],
         condition=IfCondition(bridge_ground_truth))
 
+    # dynamic_pose/info carries ONLY the entities that are not static, so it stays
+    # small: in the stock world that is the robot and its links, plus anything you
+    # have made non-static yourself. MEASURED at ~57 Hz with RTF 0.98, i.e. the same
+    # order as the ground-truth odometry, and it scales with RTF like everything
+    # else. /world/default/pose/info is the one to avoid -- 77 entities of which 67
+    # can never move.
+    #
+    # Pose_V maps onto tf2_msgs/TFMessage, and each entry's child_frame_id is the
+    # model name. This is NOT published on /tf and is not meant for TF: it is a pose
+    # feed that happens to reuse a convenient message type.
+    start_model_pose_bridge_cmd = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='model_pose_bridge',
+        output='screen',
+        arguments=[
+            '/world/default/dynamic_pose/info@tf2_msgs/msg/TFMessage'
+            '[ignition.msgs.Pose_V',
+        ],
+        condition=IfCondition(bridge_model_poses))
+
     ld = LaunchDescription()
 
     ld.add_action(declare_use_sim_time_cmd)
@@ -279,6 +309,7 @@ def generate_launch_description():
     ld.add_action(declare_bridge_sensors_cmd)
     ld.add_action(declare_bridge_cmd_vel_cmd)
     ld.add_action(declare_bridge_ground_truth_cmd)
+    ld.add_action(declare_bridge_model_poses_cmd)
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_max_speed_cmd)
     ld.add_action(declare_max_accel_cmd)
@@ -292,5 +323,6 @@ def generate_launch_description():
     ld.add_action(start_sensor_bridge_cmd)
     ld.add_action(start_cmd_vel_bridge_cmd)
     ld.add_action(start_ground_truth_bridge_cmd)
+    ld.add_action(start_model_pose_bridge_cmd)
 
     return ld

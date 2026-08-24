@@ -66,7 +66,7 @@
         </geometry>
       </collision>
       <collision name='base_footprint_fixed_joint_lump__cam0_collision_3'>
-        <pose>0.496 0 0.4395 0 0 0</pose>
+        <pose>0.496 0.0936 0.4395 0 0 0</pose>
         <geometry>
           <box>
             <size>0.02 0.02 0.02</size>
@@ -75,9 +75,10 @@
       </collision>
       <!-- Hand-added, not converter output: the stereo partner for cam0, one
            calibrated baseline (93.6 mm) along cam0's optical +X, which is the
-           robot's right, i.e. base -Y. -->
+           robot's right, i.e. base -Y. cam1 is the camera on the centreline
+           (base y=0); cam0 is the one offset, to base +Y. -->
       <collision name='cam1_collision'>
-        <pose>0.496 -0.0936 0.4395 0 0 0</pose>
+        <pose>0.496 0 0.4395 0 0 0</pose>
         <geometry>
           <box>
             <size>0.02 0.02 0.02</size>
@@ -85,7 +86,7 @@
         </geometry>
       </collision>
       <collision name='base_footprint_fixed_joint_lump__cam0_depth_collision_4'>
-        <pose>0.496 0 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <pose>0.496 0.0936 0.4395 -1.5707963268 0 -1.5707963268</pose>
         <geometry>
           <box>
             <size>0.028 0.028 0.028</size>
@@ -93,7 +94,7 @@
         </geometry>
       </collision>
       <collision name='base_footprint_fixed_joint_lump__cam0_undis_collision_5'>
-        <pose>0.496 0 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <pose>0.496 0.0936 0.4395 -1.5707963268 0 -1.5707963268</pose>
         <geometry>
           <box>
             <size>0.028 0.028 0.028</size>
@@ -153,7 +154,7 @@
         </material>
       </visual>
       <visual name='base_footprint_fixed_joint_lump__cam0_visual_3'>
-        <pose>0.496 0 0.4395 0 0 0</pose>
+        <pose>0.496 0.0936 0.4395 0 0 0</pose>
         <geometry>
           <box>
             <size>0.02 0.02 0.02</size>
@@ -165,7 +166,7 @@
         </material>
       </visual>
       <visual name='cam1_visual'>
-        <pose>0.496 -0.0936 0.4395 0 0 0</pose>
+        <pose>0.496 0 0.4395 0 0 0</pose>
         <geometry>
           <box>
             <size>0.02 0.02 0.02</size>
@@ -177,7 +178,7 @@
         </material>
       </visual>
       <visual name='base_footprint_fixed_joint_lump__cam0_depth_visual_4'>
-        <pose>0.496 0 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <pose>0.496 0.0936 0.4395 -1.5707963268 0 -1.5707963268</pose>
         <geometry>
           <box>
             <size>0.028 0.028 0.028</size>
@@ -189,7 +190,7 @@
         </material>
       </visual>
       <visual name='base_footprint_fixed_joint_lump__cam0_undis_visual_5'>
-        <pose>0.496 0 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <pose>0.496 0.0936 0.4395 -1.5707963268 0 -1.5707963268</pose>
         <geometry>
           <box>
             <size>0.028 0.028 0.028</size>
@@ -252,7 +253,7 @@
              this one, so info lands on /cam0/camera_info, NOT
              /cam0/image_raw/camera_info. -->
         <topic>cam0/image_raw</topic>
-        <update_rate>20</update_rate>
+        <update_rate>30</update_rate>
         <always_on>1</always_on>
         <visualize>0</visualize>
         <camera>
@@ -279,7 +280,7 @@
       <sensor name='cam1' type='camera'>
         <pose relative_to='cam1'>0 0 0 0 -0 0</pose>
         <topic>cam1/image_raw</topic>
-        <update_rate>20</update_rate>
+        <update_rate>30</update_rate>
         <always_on>1</always_on>
         <visualize>0</visualize>
         <camera>
@@ -792,8 +793,13 @@
       <pose>0 0 0 -1.5708 -0 -1.5708</pose>
     </frame>
     <frame name='cam0_undis' attached_to='cam0_undis_joint'/>
+    <!--
+      +Y (base left) offset so that cam1, NOT cam0, sits on the robot centreline.
+      cam_link2 (the bracket) stays centred; the camera pair hangs off it to the
+      left by one baseline, putting cam0 at base +0.0936 and cam1 at base 0.
+    -->
     <frame name='cam0_joint' attached_to='cam_link2'>
-      <pose>0 0 0.058 0 -0 0</pose>
+      <pose>0 0.0936 0.058 0 -0 0</pose>
     </frame>
     <frame name='cam0' attached_to='cam0_joint'/>
     <!--
@@ -805,6 +811,10 @@
       robot's right, which is base -Y. If the stereo pair ever looks inverted,
       this sign and the matching one in config/wil_sim/stereo_imu.yaml are the
       first thing to check.
+
+      This -0.0936 is what lands cam1 on the robot centreline, because cam0_joint
+      offsets the pair by +0.0936 first. Keep the two in step: they must always
+      sum to zero, or cam1 walks off centre.
 
       cam1_undis mirrors cam0_undis: the ROS optical frame, for anyone wiring up
       TF later. Nothing in this file points a sensor at it.

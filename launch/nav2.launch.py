@@ -195,9 +195,15 @@ def generate_launch_description():
              remappings=[('cmd_vel', 'cmd_vel_nav'),
                          ('cmd_vel_smoothed', 'cmd_vel')]),
 
+        # configured_params FIRST, and it is load-bearing: this node was previously
+        # given an inline dict only, so bond_timeout: 20.0 in the params file never
+        # reached it and the manager silently used nav2's 4.0 s default. That is the
+        # spurious "SERVER map_server IS DOWN after ... 4000 ms" teardown the params
+        # file warns about, and it tears the whole stack down under load.
         Node(package='nav2_lifecycle_manager', executable='lifecycle_manager',
              name='lifecycle_manager_navigation', output='screen',
-             parameters=[{'use_sim_time': use_sim_time,
+             parameters=[configured_params,
+                         {'use_sim_time': use_sim_time,
                           'autostart': autostart,
                           'node_names': lifecycle_nodes}]),
     ])

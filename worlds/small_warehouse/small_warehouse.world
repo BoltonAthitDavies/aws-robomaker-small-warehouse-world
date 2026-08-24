@@ -71,11 +71,11 @@
       <pose>0.0 0.0 0 0 0 0</pose>
     </include>
 
-    <include>
+    <!-- <include>
       <uri>model://aws_robomaker_warehouse_ShelfF_01</uri>
       <name>aws_robomaker_warehouse_ShelfF_01_001</name>
       <pose>-5.795143 -0.956635 0 0 0 0</pose>
-    </include>
+    </include> -->
 
     <include>
       <uri>model://aws_robomaker_warehouse_WallB_01</uri>
@@ -83,7 +83,7 @@
       <pose>0.0 0.0 0 0 0 0</pose>
     </include>
 
-    <include>
+    <!-- <include>
       <uri>model://aws_robomaker_warehouse_ShelfE_01</uri>
       <name>aws_robomaker_warehouse_ShelfE_01_001</name>
       <pose>4.73156 0.57943 0 0 0 0</pose>
@@ -117,7 +117,7 @@
       <uri>model://aws_robomaker_warehouse_ShelfD_01</uri>
       <name>aws_robomaker_warehouse_ShelfD_01_003</name>
       <pose>4.73156 -6.750542 0 0 0 0</pose>
-    </include>
+    </include> -->
 
     <!--
     <include>
@@ -189,6 +189,11 @@
       <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
       <name>aws_robomaker_warehouse_ClutteringA_01_018</name>
       <pose>-1.491287 5.222435 -0.017477 0 0 -1.583185</pose>
+      <static>false</static>
+      <plugin filename="ignition-gazebo-velocity-control-system"
+              name="ignition::gazebo::systems::VelocityControl">
+        <initial_linear>0.15 0 0</initial_linear>
+      </plugin>
     </include>
 
     <include>
@@ -215,11 +220,22 @@
       <pose>3.236 6.137154 0 0 0 3.150000</pose>
     </include>
 
-    <include>
+    <!-- <include>
       <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
       <name>aws_robomaker_warehouse_ClutteringC_01_031</name>
       <pose>-1.573677 2.301994 -0.015663 0 0 -3.133191</pose>
+    </include> -->
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_031</name>
+      <pose>-1.573677 2.301994 0 0 0 -3.133191</pose>
+      <static>false</static>
+      <plugin filename="ignition-gazebo-velocity-control-system"
+              name="ignition::gazebo::systems::VelocityControl">
+        <initial_linear>0 0.15 0</initial_linear>
+      </plugin>
     </include>
+
 
     <include>
       <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
@@ -246,29 +262,23 @@
     </include> -->
 
     <!-- sphere at origin -->
-    <include>
-      <uri>model://sphere</uri>
-      <name>sphere_at_origin</name>
-      <pose>0 0 0 0 0 0</pose>
-    </include>
-
-    <include>
+    <!-- <include>
       <uri>model://sphere</uri>
       <name>sphere_at_x</name>
-      <pose>1 0 0 0 0 0</pose>
+      <pose>1 0 8 0 0 0</pose>
     </include>
 
     <include>
       <uri>model://sphere</uri>
       <name>sphere_at_y</name>
-      <pose>0 1 0 0 0 0</pose>
+      <pose>0 1 8 0 0 0</pose>
     </include>
 
     <include>
       <uri>model://sphere</uri>
       <name>sphere_at_z</name>
-      <pose>0 0 1 0 0 0</pose>
-    </include>
+      <pose>0 0 8 0 0 0</pose>
+    </include> -->
 
     <!-- ackermann_robot -->
     <include>
