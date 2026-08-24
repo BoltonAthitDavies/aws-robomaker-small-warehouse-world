@@ -390,6 +390,27 @@ Driving. The robot is Ackermann-steered, so you must be moving to steer.
 | `s` / `↓` | brake, then reverse |
 | `a` / `←`, `d` / `→` | steer left / right |
 | `space` | handbrake -- zero the speed and drop every held key |
+| `-` / `+` | lower / raise the speed cap by 10% (0.2 -- 10.0 m/s) |
+| `,` / `.` | lower / raise the steering-angle cap by 10% (2 -- 35 deg) |
+| `0` | reset both caps |
+
+The two cap keys are what "increase/decrease speed" means on this robot, and the
+angular one is a **steering angle**, not a yaw rate, because a steering angle is the
+only angular freedom an Ackermann car has. `/cmd_vel` gets the yaw rate that implies at
+the current speed, `wz = v*tan(steer)/wheel_base`, so achievable yaw rate scales with
+both knobs and is zero when stopped. Nothing here can make the robot spin on the spot.
+
+Both are caps on the pedal, not commanded values: nothing moves until you press a drive
+key. Winding a cap down *while* driving re-clamps on the next tick, so the robot slows
+immediately rather than waiting for the next acceleration. The panel shows both caps and
+the resulting maximum yaw rate, dim while they are stock and highlighted once changed.
+
+The 35 deg ceiling is the model's own `<steering_limit>` and is not arbitrary: above it
+`AckermannSteering` silently clamps and the robot under-turns with no error anywhere.
+The 10.0 m/s ceiling is the launch arg `max_speed`'s default, which clamps at the plugin
+-- raise `max_speed` first if you want more. Because the steering cap can never exceed
+35 deg, these keys cannot push `|wz|/|vx|` past the 1.6673 curvature bound documented
+below; measured at the extremes, 10.0 m/s with 35 deg gives exactly 1.667.
 
 Navigation. See [Waypoint routes](#waypoint-routes-and-planning-before-the-robot-moves) below.
 
