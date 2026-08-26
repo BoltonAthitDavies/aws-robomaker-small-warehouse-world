@@ -441,8 +441,9 @@ Layers. All toggles.
 | `m` | map overlay (needs `--map`) |
 | `t` | trails |
 | `v` | VINS overlay |
+| `b` | ORB-SLAM3 overlay |
 | `c` | camera thumbnail |
-| `r` | re-align VINS to ground truth |
+| `r` | re-align every estimator to ground truth, clearing its trail |
 
 Quit with `q` or `Ctrl-C`. The viewer also stops the robot by itself when the window
 loses focus, rather than letting it coast.
@@ -456,7 +457,8 @@ All optional; the defaults are what `python3 viewer.py` with no flags uses.
 | Argument | Default | Description |
 | :------- | :------ | :---------- |
 | `--gt-topic` | `/ground_truth/odometry` | Odometry the robot pose, trail and RTF clock come from. The viewer takes its clock from these header stamps rather than `/clock` — see the `/clock` note below. |
-| `--vins-topic` | `auto` | VINS odometry to overlay. `auto` probes `/vins_estimator/odometry`, then `/odometry`, then any other `nav_msgs/Odometry` publisher. |
+| `--vins-topic` | `auto` | VINS odometry to overlay. `auto` probes `/vins_estimator/odometry`, then `/odometry`, then any other `nav_msgs/Odometry` publisher. `""` disables the overlay. |
+| `--orb-topic` | `/orbslam3_node/odometry` | ORB-SLAM3 odometry to overlay. `orbslam3_node.cpp` publishes `~/odometry` from `Node("orbslam3_node")`, so the default is exact and needs no probing. `auto` probes, `""` disables. |
 | `--cmd-vel-topic` | `/cmd_vel` | Where keyboard teleop publishes, and the topic whose rate is shown. |
 | `--imu-topic` | `/imu` | IMU topic for the `--watch-imu` rate row. |
 | `--cam-info-topics` | `/cam0/camera_info,/cam1/camera_info` | Comma-separated `CameraInfo` topics watched for rates — the cheap way to see whether the cameras are keeping up without subscribing to images. |
@@ -498,7 +500,7 @@ All optional; the defaults are what `python3 viewer.py` with no flags uses.
 | `--live-poses` | off | Draw moving models at their live gz pose instead of the pose the world file authored. Needs `bridge_model_poses:=True`. ~13% of a core -- see below. |
 | `--watch-imu` | off | Add an `/imu` row to the rate panel. Costs ~21% of a core at RTF 0.4 and ~45-50% at RTF 1.0 — rclpy is ~2.2 ms per message. RTF tells you the same thing more cheaply. |
 | `--trail-min-step` | `0.02` | Metres of motion before a new trail point is recorded. Raising it keeps long runs' trails shorter. |
-| `--vins-align {first,none}` | `first` | `first` fits a rigid VINS→world transform the first time VINS has moved 0.5 m, so the two trails are comparable; `none` draws VINS in its own frame. Re-align at runtime with `r`. |
+| `--align {first,none}` | `first` | How each estimator overlay is placed on the map. `first` fits a rigid estimator→world transform the first time that estimate has moved 0.5 m, so the trails are comparable; `none` draws it in its own frame. Applies to **every** estimator. Re-align at runtime with `r`. The old spelling `--vins-align` still works. |
 | `--no-sim-time` | off | Ignored — accepted so older command lines still run. The viewer never uses sim time; that is deliberate, for the `/clock` reason below. |
 
 `--rotate {0,90,180,270}` sets the starting orientation, e.g. `--rotate 180` to put the
@@ -560,6 +562,46 @@ launched. It drives each waypoint as a separate `NavigateToPose` goal, so the ro
 stops and replans at every one and every arrival has to satisfy both the goal checker
 and a feasible Dubins heading. `NavigateThroughPoses` treats them as via-points on one
 path, which is what a car wants.
+
+#### Estimator overlays: VINS and ORB-SLAM3
+
+Both are drawn the same way, because both need the same treatment. Each publishes
+`nav_msgs/Odometry` in its **own** start frame -- arbitrary origin, arbitrary heading --
+so neither can be put on the warehouse map until it has been placed there. The viewer
+waits until the estimate has actually moved 0.5 m, then solves the yaw and translation
+that put it on ground truth at that instant, and holds that fit. Drift after the fit is
+therefore real drift, which is the whole point.
+
+| Trail | Source | Style |
+| :---- | :----- | :---- |
+| ground truth | `/ground_truth/odometry` | blue, solid |
+| VINS | `/vins_estimator/odometry` or `/odometry` | orange, dashed |
+| ORB-SLAM3 | `/orbslam3_node/odometry` | magenta, dotted |
+
+Distinct dash patterns as well as distinct hues, so the trails stay tellable apart where
+they overlap and in a screenshot that has lost its colour. ORB-SLAM3 is deliberately not
+cyan: at trail width cyan reads as the ground-truth blue, and ground truth is the one
+comparison these overlays exist to support.
+
+The panel carries a row per estimator with its live error against ground truth, sampled
+by interpolating ground truth **at the estimate's own stamp** -- comparing against the
+latest ground truth instead would add a spurious `v*dt` term, 0.4 m at 4 m/s with 100 ms
+of lag. `v` and `b` toggle the two overlays independently so you can look at one at a
+time; `r` re-aligns both and clears their trails.
+
+Two things that are easy to get wrong here:
+
+- **`auto` probing must never hand two overlays the same topic.** VINS's fallback branch
+  is "any other Odometry publisher", which will happily adopt ORB-SLAM3's feed if VINS
+  is not running -- and then the same trail is drawn twice under two names, which looks
+  like agreement between two estimators. Each probe now skips every other estimator's
+  topic.
+- **Topic probing cannot be done once at startup.** `RosLink.__init__` runs before the
+  executor spins, so DDS discovery has not finished and `count_publishers()` reports 0
+  for topics that are in fact being published -- measured: probing at startup found
+  nothing, probing 1 s later found `/vins_estimator/odometry`. `auto` topics are now
+  re-probed once a second for 20 s, which also covers starting the viewer before the
+  estimator.
 
 #### Moving models
 
