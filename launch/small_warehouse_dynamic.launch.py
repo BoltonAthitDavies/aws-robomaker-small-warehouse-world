@@ -15,6 +15,7 @@
 import os
 import re
 import shutil
+import sys
 import tempfile
 
 from ament_index_python.packages import get_package_share_directory
@@ -32,6 +33,13 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
 from launch_ros.actions import Node
+
+# The launch directory is not an importable Python package, so put it on the path
+# to reach stale_process_reaper.py sitting next to this file. __file__ resolves to
+# the source tree under --symlink-install and to share/ otherwise, i.e. to
+# whichever copy is actually being run, so this needs no ament lookup.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from stale_process_reaper import reaper  # noqa: E402
 
 # Where the speed-patched copy of the robot model is written. Stable rather than a
 # fresh mkdtemp per run, so repeated launches do not litter /tmp and so the path in
@@ -116,6 +124,15 @@ def generate_launch_description():
     bridge_ground_truth = LaunchConfiguration('bridge_ground_truth')
     bridge_model_poses = LaunchConfiguration('bridge_model_poses')
     robot_name = LaunchConfiguration('robot_name')
+    reap_stale = LaunchConfiguration('reap_stale')
+
+    declare_reap_stale_cmd = DeclareLaunchArgument(
+        'reap_stale', default_value='True',
+        description='Before starting anything, kill gz and ros_gz_bridge processes left over from a previous '
+                    'launch -- Ctrl-C does not reliably reap them and the leftovers '
+                    'fight the new run over /clock and /tf. See '
+                    'launch/stale_process_reaper.py. Set False only if you are '
+                    'deliberately running a second stack on this ROS_DOMAIN_ID.')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
@@ -174,7 +191,7 @@ def generate_launch_description():
     declare_world_cmd = DeclareLaunchArgument(
         'world',
         default_value=os.path.join(
-            pkg_share, 'worlds', 'small_warehouse_static', 'small_warehouse_static.world'),
+            pkg_share, 'worlds', 'small_warehouse_dynamic', 'small_warehouse_dynamic.world'),
         description='Full path to the world file to load')
 
     declare_verbosity_cmd = DeclareLaunchArgument(
@@ -313,6 +330,13 @@ def generate_launch_description():
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_max_speed_cmd)
     ld.add_action(declare_max_accel_cmd)
+    ld.add_action(declare_reap_stale_cmd)
+
+    # Must run BEFORE gz starts, and before the shadowing below touches
+    # anything: a surviving gz from the last run holds the same fixed topic
+    # names this one is about to advertise.
+    ld.add_action(OpaqueFunction(function=reaper('sim'),
+                                 condition=IfCondition(reap_stale)))
 
     # Must run BEFORE gz starts: it sets the resource path the gz process inherits.
     ld.add_action(OpaqueFunction(function=_override_speed_limits))

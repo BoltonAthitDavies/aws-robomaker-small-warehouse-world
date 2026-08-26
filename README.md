@@ -103,6 +103,7 @@ ros2 launch aws_robomaker_small_warehouse_world small_warehouse.launch.py
 | `max_speed` | `10.0` | Robot speed cap in m/s, forward and reverse. |
 | `max_accel` | `3.0` | Robot acceleration cap in m/s². Decides how much run-up the top speed needs. |
 | `bridge_model_poses` | `False` | Bridge gz's dynamic model poses onto ROS as a `TFMessage`, so `viewer.py --live-poses` can draw MOVING models where they actually are. Only useful if you have made something in the world non-static. |
+| `reap_stale` | `True` | Before starting anything, kill leftover gz, bridge, TF and Nav2 processes from a previous launch on the same `ROS_DOMAIN_ID`. Ctrl-C does not reliably reap them and the survivors fight the new run over `/clock` and `/tf`. See the trap below. Set `False` only if you are deliberately running a second stack on this domain. |
 
 Both launch files accept all ten. For example:
 
@@ -458,7 +459,7 @@ All optional; the defaults are what `python3 viewer.py` with no flags uses.
 | :------- | :------ | :---------- |
 | `--gt-topic` | `/ground_truth/odometry` | Odometry the robot pose, trail and RTF clock come from. The viewer takes its clock from these header stamps rather than `/clock` — see the `/clock` note below. |
 | `--vins-topic` | `auto` | VINS odometry to overlay. `auto` probes `/vins_estimator/odometry`, then `/odometry`, then any other `nav_msgs/Odometry` publisher. `""` disables the overlay. |
-| `--orb-topic` | `/orbslam3_node/odometry` | ORB-SLAM3 odometry to overlay. `orbslam3_node.cpp` publishes `~/odometry` from `Node("orbslam3_node")`, so the default is exact and needs no probing. `auto` probes, `""` disables. |
+| `--orb-topic` | `auto` | ORB-SLAM3 odometry to overlay. `auto` probes `/orbslam3/odometry`, then `/orbslam3_node/odometry`. `""` disables the overlay. |
 | `--cmd-vel-topic` | `/cmd_vel` | Where keyboard teleop publishes, and the topic whose rate is shown. |
 | `--imu-topic` | `/imu` | IMU topic for the `--watch-imu` rate row. |
 | `--cam-info-topics` | `/cam0/camera_info,/cam1/camera_info` | Comma-separated `CameraInfo` topics watched for rates — the cheap way to see whether the cameras are keeping up without subscribing to images. |
@@ -576,7 +577,7 @@ therefore real drift, which is the whole point.
 | :---- | :----- | :---- |
 | ground truth | `/ground_truth/odometry` | blue, solid |
 | VINS | `/vins_estimator/odometry` or `/odometry` | orange, dashed |
-| ORB-SLAM3 | `/orbslam3_node/odometry` | magenta, dotted |
+| ORB-SLAM3 | `/orbslam3/odometry` | magenta, dotted |
 
 Distinct dash patterns as well as distinct hues, so the trails stay tellable apart where
 they overlap and in a screenshot that has lost its colour. ORB-SLAM3 is deliberately not
@@ -589,7 +590,15 @@ latest ground truth instead would add a spurious `v*dt` term, 0.4 m at 4 m/s wit
 of lag. `v` and `b` toggle the two overlays independently so you can look at one at a
 time; `r` re-aligns both and clears their trails.
 
-Two things that are easy to get wrong here:
+**ORB-SLAM3's topic is not the name in its source.** `orbslam3_node.cpp` publishes the
+relative name `~/odometry`, so the topic is `/<node name>/odometry` -- and the node name
+comes from the launch file, not the constructor. All three files in
+`orbslam3_ros2/launch` pass `name='orbslam3'`, which overrides `Node("orbslam3_node")`,
+so a launched node publishes **`/orbslam3/odometry`** and only a bare `ros2 run` gives
+`/orbslam3_node/odometry`. Both are probed, in that order. If you rename the node again,
+pass `--orb-topic` explicitly.
+
+Two more things that are easy to get wrong here:
 
 - **`auto` probing must never hand two overlays the same topic.** VINS's fallback branch
   is "any other Odometry publisher", which will happily adopt ORB-SLAM3's feed if VINS
@@ -686,7 +695,7 @@ run, three goals from spawn:
 
 against `desired_linear_vel: 0.60` and `xy_goal_tolerance: 0.30`.
 
-#### Four traps, all of which cost real debugging time here
+#### Five traps, all of which cost real debugging time here
 
 **Measure in SIM time, not wall time.** This is the big one. At RTF 0.2-0.4 a 12 m goal
 legitimately takes 2-3 minutes of wall clock. Timing a goal on the wall clock, or dividing
@@ -734,6 +743,38 @@ Note 1.6673 is `tan(35 deg)/0.42`, the REAR-AXLE bound. Nav2 plans `base_link`, 
 mid-wheelbase and sweeps the larger radius 0.6355 m (curvature 1.5736). Do not mix them.
 Also: slowing down makes saturation *worse*, since the steering angle depends on
 `angular.z / linear.x` -- lowering `desired_linear_vel` is never the fix.
+
+**A leftover process from the last run looks exactly like a TF bug.** `Ctrl-C` does not
+reliably reap what a launch started -- `ign gazebo` in particular ignores `SIGTERM` often
+enough to outlive its own launch, and one was found still running 73 minutes later. The
+next launch then comes up *alongside* the previous generation, and because these nodes
+talk on fixed topic names the two fight over the same signals. The symptom is never "there
+are two of everything", it is:
+
+```
+[planner_server] TF_OLD_DATA ignoring data from the past for frame base_footprint at time 0.100000
+[bt_navigator]   Detected jump back in time. Clearing TF buffer.
+```
+
+The first is two `ground_truth_localization` nodes publishing `odom -> base_footprint` from
+sims at different sim times; the buffer keeps the newer timeline and rejects every
+transform from the real one. The second is two `clock_bridge` processes relaying the *same*
+gz clock onto ROS `/clock` with independent latency, so consecutive samples arrive out of
+order by one sim step and tf2 reads it as time running backwards -- then wipes the entire
+buffer, repeatedly. Measured on a live run: 11370 `/clock` samples in 6 s of sim time where
+1000/s is expected, and 19 backward steps of exactly one step each.
+
+This is now handled automatically: every launch file here reaps the previous generation
+before starting, which is why `reap_stale` exists. Diagnose it by hand with
+
+```
+ros2 daemon stop && ros2 daemon start     # the daemon caches dead nodes; refresh first
+ros2 node list | sort | uniq -c | awk '$1>1'
+ros2 topic info /clock                    # Publisher count must be 1
+```
+
+Refresh the daemon *before* believing the node list -- a killed node lingers in its cache
+long enough to look like a live duplicate.
 
 #### Known open issues
 

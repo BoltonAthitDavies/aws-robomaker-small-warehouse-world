@@ -30,15 +30,23 @@ The chain, with exactly one publisher per edge:
 """
 
 import os
+import sys
 
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 
 from launch_ros.actions import Node
+
+# The launch directory is not an importable Python package, so put it on the path
+# to reach stale_process_reaper.py sitting next to this file. __file__ resolves to
+# the source tree under --symlink-install and to share/ otherwise, i.e. to
+# whichever copy is actually being run, so this needs no ament lookup.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from stale_process_reaper import reaper  # noqa: E402
 
 
 def generate_launch_description():
@@ -47,6 +55,15 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     publish_joint_states = LaunchConfiguration('publish_joint_states')
     flatten_2d = LaunchConfiguration('flatten_2d')
+    reap_stale = LaunchConfiguration('reap_stale')
+
+    declare_reap_stale_cmd = DeclareLaunchArgument(
+        'reap_stale', default_value='True',
+        description='Before starting anything, kill TF publishers left over from a previous '
+                    'launch -- Ctrl-C does not reliably reap them and the leftovers '
+                    'fight the new run over /clock and /tf. See '
+                    'launch/stale_process_reaper.py. Set False only if you are '
+                    'deliberately running a second stack on this ROS_DOMAIN_ID.')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time', default_value='True',
@@ -113,6 +130,14 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_publish_joint_states_cmd)
     ld.add_action(declare_flatten_2d_cmd)
+    ld.add_action(declare_reap_stale_cmd)
+
+    # Exactly one publisher per edge is the whole contract of this file, and a
+    # survivor from the last run breaks it in a way that reads as a TF bug
+    # rather than as a duplicate node.
+    ld.add_action(OpaqueFunction(function=reaper('localization'),
+                                 condition=IfCondition(reap_stale)))
+
     ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(start_joint_state_publisher_cmd)
     ld.add_action(start_ground_truth_localization_cmd)

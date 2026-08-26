@@ -130,7 +130,7 @@ def generate_launch_description():
     declare_world_cmd = DeclareLaunchArgument(
         'world',
         default_value=os.path.join(
-            pkg_share, 'worlds', 'small_warehouse', 'small_warehouse.world'),
+            pkg_share, 'worlds', 'small_warehouse_dynamic', 'small_warehouse_dynamic.world'),
         description='World file; must be the one the map was baked from')
 
     declare_verbosity_cmd = DeclareLaunchArgument(
