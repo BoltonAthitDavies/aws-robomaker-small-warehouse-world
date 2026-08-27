@@ -95,11 +95,15 @@ _PKG = 'aws_robomaker_small_warehouse_world'
 GROUPS = {
     # small_warehouse.launch.py and its _static/_dynamic twins: the gz server and
     # GUI (both carry the world path, which lives under this package's share dir)
-    # plus the five bridges it names.
+    # plus the bridges it names.
     'sim': (
         r'(ign gazebo|gz sim).*' + _PKG,
         r'parameter_bridge.*__node:='
         r'(clock|sensor|cmd_vel|ground_truth|model_pose)_bridge\b',
+        # compressed_images:=True adds this one alongside sensor_bridge; it holds
+        # /camN/image_raw just as the parameter_bridge shape does, so a survivor
+        # duplicates every frame for the next run.
+        r'image_bridge.*__node:=cam_image_bridge\b',
     ),
     # localization_tf.launch.py. ground_truth_localization is ours; the other two
     # are stock nodes we run under stock names -- see SCOPE above.

@@ -111,6 +111,74 @@ def _override_speed_limits(context, *args, **kwargs):
     return actions
 
 
+def _sensor_bridges(context, *args, **kwargs):
+    """The camera and IMU bridges, in one of two shapes set by compressed_images.
+
+    parameter_bridge is a message-TYPE bridge: it knows sensor_msgs/Image and
+    nothing whatever about image_transport, so it can only ever produce RAW
+    images. That is the one place the simulated pipeline differs from the real
+    one -- the real rig's bags carry /camN/image_raw/compressed, and
+    orbslam3_ros2/launch/wil_stereo_imu.launch.py subscribes to them with
+    image_transport="compressed".
+
+    compressed_images:=True closes that gap by bringing the images across through
+    ros_gz_image's image_bridge instead, which publishes through image_transport
+    and therefore advertises /camN/image_raw AND .../compressed (and .../theora)
+    from a single node. The sim can then be consumed by exactly the launch
+    configuration the real rig uses.
+
+    The images MOVE between the two bridges rather than being published by both:
+    image_bridge names its ROS topic after the gz topic it reads, so leaving the
+    Image lines in parameter_bridge as well would put two publishers on
+    /cam0/image_raw and every subscriber would see each frame twice. camera_info
+    and the IMU stay on parameter_bridge in both shapes -- image_bridge carries
+    images and nothing else.
+
+    JPEG quality belongs to the compressed publisher, not to the bridge, so it is
+    tuned with a parameter on the image_bridge node (default quality 80):
+        ros2 param list /cam_image_bridge      # exact name of the jpeg_quality param
+    """
+    compressed = IfCondition(
+        LaunchConfiguration('compressed_images')).evaluate(context)
+
+    # '[' is gz -> ROS only, which is all a sensor ever needs.
+    #
+    # Note the camera_info names: gz derives them by REPLACING the last
+    # element of the sensor's <topic>, not by appending, so a sensor on
+    # 'cam0/image_raw' publishes info on '/cam0/camera_info'.
+    bridge_args = [
+        '/cam0/camera_info@sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo',
+        '/cam1/camera_info@sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo',
+        # Capitalised 'IMU' -- that is the Fortress-era gz message name.
+        '/imu@sensor_msgs/msg/Imu[ignition.msgs.IMU',
+    ]
+    if not compressed:
+        bridge_args = [
+            '/cam0/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
+            '/cam1/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
+        ] + bridge_args
+
+    nodes = [Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='sensor_bridge',
+        output='screen',
+        arguments=bridge_args)]
+
+    if compressed:
+        # The gz topic name doubles as the ROS base topic name, so these are the
+        # same '/camN/image_raw' the raw shape produces -- only now with the
+        # image_transport suffixes hanging off them.
+        nodes.append(Node(
+            package='ros_gz_image',
+            executable='image_bridge',
+            name='cam_image_bridge',
+            output='screen',
+            arguments=['/cam0/image_raw', '/cam1/image_raw']))
+
+    return nodes
+
+
 def generate_launch_description():
     pkg_share = get_package_share_directory('aws_robomaker_small_warehouse_world')
     ros_gz_sim_share = get_package_share_directory('ros_gz_sim')
@@ -143,6 +211,17 @@ def generate_launch_description():
         'bridge_sensors',
         default_value='True',
         description="Bridge the ackermann robot's cameras and IMU onto ROS topics")
+
+    declare_compressed_images_cmd = DeclareLaunchArgument(
+        'compressed_images',
+        default_value='True',
+        description='Publish the cameras through image_transport (ros_gz_image '
+                    'image_bridge) so /camN/image_raw/compressed exists alongside '
+                    'the raw topic, exactly as the real rig does. On by default '
+                    'so the simulated and real pipelines are the same shape; the '
+                    'raw topic is published either way, so consumers that want '
+                    'raw need no change. Set False to skip the JPEG encode (one '
+                    'per frame per camera). See _sensor_bridges().')
 
     declare_bridge_cmd_vel_cmd = DeclareLaunchArgument(
         'bridge_cmd_vel',
@@ -238,25 +317,11 @@ def generate_launch_description():
 
     # The ackermann robot's sensors (models/ackermann_robot/model.sdf). These are
     # the topics vins_fusion_ros2/config/wil_sim/stereo_imu.yaml subscribes to.
-    # '[' is gz -> ROS only, which is all a sensor ever needs. Humble's
-    # parameter_bridge has no YAML config option, so the mappings are listed here
-    # rather than in a config file.
-    start_sensor_bridge_cmd = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='sensor_bridge',
-        output='screen',
-        arguments=[
-            # Note the camera_info names: gz derives them by REPLACING the last
-            # element of the sensor's <topic>, not by appending, so a sensor on
-            # 'cam0/image_raw' publishes info on '/cam0/camera_info'.
-            '/cam0/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
-            '/cam0/camera_info@sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo',
-            '/cam1/image_raw@sensor_msgs/msg/Image[ignition.msgs.Image',
-            '/cam1/camera_info@sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo',
-            # Capitalised 'IMU' -- that is the Fortress-era gz message name.
-            '/imu@sensor_msgs/msg/Imu[ignition.msgs.IMU',
-        ],
+    # Built by an OpaqueFunction because compressed_images decides how many nodes
+    # there are and what arguments they take, and Humble's parameter_bridge has
+    # no YAML config option to push that decision out of the launch file.
+    start_sensor_bridge_cmd = OpaqueFunction(
+        function=_sensor_bridges,
         condition=IfCondition(bridge_sensors))
 
     # Actuation, kept separate from sensor_bridge: opposite direction, and this way
@@ -324,6 +389,7 @@ def generate_launch_description():
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_verbosity_cmd)
     ld.add_action(declare_bridge_sensors_cmd)
+    ld.add_action(declare_compressed_images_cmd)
     ld.add_action(declare_bridge_cmd_vel_cmd)
     ld.add_action(declare_bridge_ground_truth_cmd)
     ld.add_action(declare_bridge_model_poses_cmd)

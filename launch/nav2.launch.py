@@ -165,6 +165,10 @@ def generate_launch_description():
             'verbosity': verbosity,
             'robot_name': robot_name,
             'bridge_sensors': 'True',
+            # Cameras through image_transport, so /camN/image_raw/compressed
+            # exists here too and the sim matches the real rig. The raw topic is
+            # unaffected, so Nav2 itself neither knows nor cares.
+            'compressed_images': 'True',
             'bridge_cmd_vel': 'True',        # this is how Nav2 reaches the robot
             'bridge_ground_truth': 'True',   # this is what localizes it
         }.items(),
