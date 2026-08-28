@@ -57,6 +57,18 @@ bt_navigator:
     # Galactic used default_bt_xml_filename only. Copy plugin_lib_names verbatim
     # from the installed nav2_params.yaml -- a wrong list gives an opaque
     # "Error loading XML file" the first time you send a goal.
+    # A via-point is NOT covered by xy_goal_tolerance -- that is the FINAL pose
+    # only. Intermediate poses are discarded by proximity alone, by RemovePassedGoals
+    # inside the BT XML, and nav2's stock tree hard-codes that radius at 0.7 m with
+    # no parameter to override it. Too small for this car: RPP cuts corners by up to
+    # min_lookahead_dist (1.30 m) as normal tracking, so a via-point is routinely
+    # passed at more than 0.7 m, is never consumed, and the next plan is a full
+    # circle back to a point the robot already reached. Hence a local copy of the
+    # tree with the radius raised; it is otherwise byte-identical to nav2's.
+    # Absolute path, rewritten at launch by RewrittenYaml -- plain YAML has no
+    # $(find-pkg-share) substitution, and an unresolved value here fails only
+    # when the first goal arrives, as an opaque "Error loading XML file".
+    default_nav_through_poses_bt_xml: REWRITTEN_AT_LAUNCH
     navigators: ["navigate_to_pose", "navigate_through_poses"]
     navigate_to_pose:
       plugin: "nav2_bt_navigator/NavigateToPoseNavigator"
@@ -83,17 +95,18 @@ controller_server:
     general_goal_checker:
       # The name must match the goal_checker_id the stock BT's FollowPath passes.
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.30
+      xy_goal_tolerance: 3.0
       # 0.60 rad ~ 34 deg, deliberately loose. With no rotate-in-place the final
       # heading comes entirely from how well RPP tracked the last Dubins segment;
       # a tight tolerance produces a robot that circles the goal forever.
-      yaw_goal_tolerance: 0.60
+      # yaw_goal_tolerance: 0.60
+      yaw_goal_tolerance: 3.15
       stateful: true
 
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       # note: RPP registers with "::", Smac below registers with "/". Not a typo.
-      desired_linear_vel: 0.60
+      desired_linear_vel: 1.5
       min_approach_linear_velocity: 0.15   # NOT the 0.05 default: k -> inf near goal
       approach_velocity_scaling_dist: 0.60
 
@@ -133,6 +146,7 @@ controller_server:
       # and the controller never leaves the state. (Humble also refuses to have
       # use_rotate_to_heading and allow_reversing both true.)
       use_rotate_to_heading: false
+      # allow_reversing: false
       allow_reversing: false
       rotate_to_heading_min_angle: 3.15    # unreachable, belt and braces
       max_angular_accel: 1.50
@@ -252,7 +266,7 @@ velocity_smoother:
     # the steering angle.
     scale_velocities: true
     feedback: "OPEN_LOOP"
-    max_velocity: [0.60, 0.0, 1.00]     # 1.00 = 1.6673 * 0.60, the fastest feasible yaw
+    max_velocity: [1.5, 0.0, 1.00]     # 1.00 = 1.6673 * 0.60, the fastest feasible yaw
     min_velocity: [-0.60, 0.0, -1.00]
     max_accel: [0.80, 0.0, 2.00]
     max_decel: [-1.50, 0.0, -2.50]

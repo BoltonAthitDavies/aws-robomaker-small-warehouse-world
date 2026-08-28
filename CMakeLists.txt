@@ -13,7 +13,7 @@ find_package(ament_cmake REQUIRED)
 # Install
 ################################################################################
 install(
-  DIRECTORY launch models worlds maps urdf params
+  DIRECTORY launch models worlds maps urdf params behavior_trees
   DESTINATION share/${PROJECT_NAME}
 )
 

@@ -6,14 +6,14 @@
       <mesh>
         <source id="aws_robomaker_warehouse_RoofB_01_collision-POSITION">
           <float_array id="aws_robomaker_warehouse_RoofB_01_collision-POSITION-array" count="24">
--686.312866 -88.698654 -1045.333374
-711.734131 -88.698654 -1045.333374
--686.312866 21.739517 -1045.333496
-711.734131 21.739517 -1045.333496
--686.312866 -88.698593 1045.333008
-711.734131 -88.698593 1045.333008
--686.312866 21.739578 1045.333008
-711.734131 21.739578 1045.333008
+-2066.195784 -88.698654 -2090.666748
+2142.728387 -88.698654 -2090.666748
+-2066.195784 21.739517 -2090.666992
+2142.728387 21.739517 -2090.666992
+-2066.195784 -88.698593 2090.666016
+2142.728387 -88.698593 2090.666016
+-2066.195784 21.739578 2090.666016
+2142.728387 21.739578 2090.666016
 </float_array>
           <technique_common>
             <accessor source="#aws_robomaker_warehouse_RoofB_01_collision-POSITION-array" count="8" stride="3">
@@ -113,7 +113,7 @@
   </library_geometries>
   <library_visual_scenes>
     <visual_scene id="aws_robomaker_warehouse_RoofB_01_collision" name="aws_robomaker_warehouse_RoofB_01_collision">
-      <node name="aws_robomaker_warehouse_RoofB_01_collision" id="aws_robomaker_warehouse_RoofB_01_collision" layer="zhenghe_collution" sid="aws_robomaker_warehouse_RoofB_01_collision"><matrix sid="matrix">1.000000 0.000000 0.000000 -12.710449 0.000000 -0.000000 -1.000000 0.000000 0.000000 1.000000 -0.000000 990.684692 0.000000 0.000000 0.000000 1.000000</matrix><instance_geometry url="#aws_robomaker_warehouse_RoofB_01_collision-lib"/><extra><technique profile="FCOLLADA"><visibility>1.000000</visibility></technique></extra></node>
+      <node name="aws_robomaker_warehouse_RoofB_01_collision" id="aws_robomaker_warehouse_RoofB_01_collision" layer="zhenghe_collution" sid="aws_robomaker_warehouse_RoofB_01_collision"><matrix sid="matrix">1.000000 0.000000 0.000000 -38.265749 0.000000 -0.000000 -1.000000 0.000000 0.000000 1.000000 -0.000000 990.684692 0.000000 0.000000 0.000000 1.000000</matrix><instance_geometry url="#aws_robomaker_warehouse_RoofB_01_collision-lib"/><extra><technique profile="FCOLLADA"><visibility>1.000000</visibility></technique></extra></node>
       <extra><technique profile="MAX3D"><frame_rate>30.000000</frame_rate></technique><technique profile="FCOLLADA"><start_time>0.000000</start_time><end_time>3.333333</end_time></technique></extra>
     </visual_scene>
   </library_visual_scenes>

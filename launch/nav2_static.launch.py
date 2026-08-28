@@ -151,7 +151,12 @@ def generate_launch_description():
         source_file=params_file,
         root_key='',
         param_rewrites={'use_sim_time': use_sim_time,
-                        'yaml_filename': map_yaml},
+                        'yaml_filename': map_yaml,
+                        # see the note in nav2_ackermann.yaml: the via-point
+                        # radius lives in the BT XML, not in any parameter
+                        'default_nav_through_poses_bt_xml': os.path.join(
+                            pkg_share, 'behavior_trees',
+                            'nav_through_poses_ackermann.xml')},
         convert_types=True)
 
     start_sim_cmd = IncludeLaunchDescription(

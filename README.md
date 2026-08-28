@@ -558,6 +558,38 @@ gets the bearing *through* the point: towards the next waypoint, or along the in
 leg for the last one. Pin a heading only when you actually want a specific arrival
 angle, and expect it to fail more often when you do.
 
+**A via-point is not covered by `xy_goal_tolerance`.** That parameter governs the
+FINAL pose only. Intermediate poses are discarded purely by proximity, by
+`RemovePassedGoals` inside the behaviour tree, and nav2's stock tree hard-codes that
+radius at **0.7 m** with no parameter to override it -- so loosening either goal
+tolerance does nothing for waypoint behaviour.
+
+0.7 m is generous on a differential robot and too small on this car:
+
+- the minimum turning radius is 0.635 m, so a via-point missed by a metre costs a
+  ~4 m loop to return to a point the robot was effectively already at;
+- RPP steers at a lookahead of `min_lookahead_dist` 1.30 m, so it deliberately cuts
+  corners by up to that much. A via-point passed at more than 0.7 m is **normal
+  tracking, not an error**.
+
+The symptom looks exactly like a planner bug: the robot drives past a waypoint, the
+waypoint is never consumed, the next plan is a full circle back to it, and the robot
+orbits -- replanning every 3 s (the tree's `RateController`) and never progressing.
+
+`behavior_trees/nav_through_poses_ackermann.xml` is a copy of nav2's stock tree with
+that radius raised to 1.60 m, just above `min_lookahead_dist`. Raise the two together;
+they are the same quantity seen from two sides. Too large and via-points get consumed
+early, flattening the route you drew.
+
+It is wired up with `default_nav_through_poses_bt_xml`, whose value is rewritten at
+launch by `RewrittenYaml` -- plain YAML has no `$(find-pkg-share)` substitution, and an
+unresolved path fails only when the first goal arrives, as an opaque *"Error loading
+XML file"*. Verify it resolved rather than assuming:
+
+```bash
+ros2 param get /bt_navigator default_nav_through_poses_bt_xml   # must be an absolute path
+```
+
 `FollowWaypoints` is deliberately not used, and `nav2_waypoint_follower` is not
 launched. It drives each waypoint as a separate `NavigateToPose` goal, so the robot
 stops and replans at every one and every arrival has to satisfy both the goal checker
@@ -694,6 +726,54 @@ run, three goals from spawn:
 | far corner `(0.23, -9.32)` | SUCCEEDED | 0.50 m/s | 0.29 m |
 
 against `desired_linear_vel: 0.60` and `xy_goal_tolerance: 0.30`.
+
+#### Checking the limits still agree: `check_limits.py`
+
+`model.sdf` is the only place the robot is actually defined. Four other files carry
+hand-copied consequences of it and **nothing connects them**:
+
+```
+models/ackermann_robot/model.sdf        wheel_base, steering_limit, speed/accel caps
+  -> drive.py                           WHEEL_BASE, STEER_LIMIT
+  -> viewer.py                          ROBOT_X0/X1/HALF_W
+  -> params/nav2_ackermann.yaml         turning radius, lookahead, footprint, velocities
+  -> launch/small_warehouse.launch.py   max_speed / max_accel defaults
+```
+
+Run this after touching any of them:
+
+```bash
+python3 ~/wil_project/check_limits.py     # 16 checks, exits non-zero on any FAIL
+```
+
+It asserts the **relations**, not the values, and reports the margin on each. That
+distinction is deliberate: `minimum_turning_radius: 0.75` against a geometric 0.6355 is
+an 18% safety margin, not a stale copy, and a tool that "fixed" it by overwriting would
+be destroying engineering judgement. Nothing is generated -- it only tells you when a
+file believes something `model.sdf` does not support.
+
+Both failure modes it guards are silent, which is the point:
+
+- **`AckermannSteering` never rejects an infeasible Twist.** It clamps the turning
+  radius internally and the robot quietly under-turns, so a `minimum_turning_radius`
+  that is too small shows up as "nav2 keeps missing corners", never as an error.
+- **`max_speed` / `max_accel` work by rewriting a copy of `model.sdf`** before gz parses
+  it. If the launch defaults and the file disagree, every run silently shadows the model
+  with a patched copy.
+
+Verified against deliberately broken trees. Tightening `<steering_limit>` from 35 deg to
+23 deg and changing nothing else produces exactly the four consequences you would
+otherwise discover by watching the robot miss corners:
+
+```
+FAIL  nav2 minimum_turning_radius covers base_link             0.7500 m >= 1.0153 m  (margin -26.1%)
+FAIL  RPP min_lookahead_dist keeps emitted curvature feasible  1.3000 m >= 2.0307 m  (margin -36.0%)
+FAIL  smoother yaw cap respects the curvature bound            1.0000 rad/s <= 0.6040 rad/s
+FAIL  drive.py STEER_LIMIT matches model.sdf                   0.6109 rad == 0.4000 rad
+```
+
+It reads the files rather than importing them, so it runs without rclpy, PyQt5 or a
+built workspace.
 
 #### Five traps, all of which cost real debugging time here
 
