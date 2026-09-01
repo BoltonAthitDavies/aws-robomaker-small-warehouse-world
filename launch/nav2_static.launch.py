@@ -81,6 +81,7 @@ def generate_launch_description():
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
     map_yaml = LaunchConfiguration('map')
+    bridge_model_poses = LaunchConfiguration('bridge_model_poses')
     start_sim = LaunchConfiguration('start_sim')
     headless = LaunchConfiguration('headless')
     world = LaunchConfiguration('world')
@@ -113,10 +114,20 @@ def generate_launch_description():
                     'Ackermann platform, not taste.')
 
     declare_map_cmd = DeclareLaunchArgument(
-        'map', default_value=os.path.join(pkg_share, 'maps', 'baked', 'map.yaml'),
+        'map', default_value=os.path.join(pkg_share, 'maps', 'baked_static', 'map.yaml'),
         description='Occupancy map. Generate with bake_map.py, which slices the '
                     "world's collision meshes -- do NOT point this at maps/002 "
-                    '(wrong frame) or maps/005 (SLAM, shelves are hollow).')
+                    '(wrong frame) or maps/005 (SLAM, shelves are hollow). This '
+                    'launch runs small_warehouse_static, whose bays hold 70 props '
+                    'that maps/baked does NOT contain -- baked comes from '
+                    'small_warehouse.world. Regenerate with:\n'
+                    '  python3 bake_map.py --world .../small_warehouse_static.world '
+                    '--out .../maps/baked_static --origin -21.1 -21.1 --size 844 844')
+
+    declare_bridge_model_poses_cmd = DeclareLaunchArgument(
+        'bridge_model_poses', default_value='False',
+        description='Bridge gz model poses onto ROS as a TFMessage so viewer.py '
+                    '--live-poses can draw props at their live pose.')
 
     declare_start_sim_cmd = DeclareLaunchArgument(
         'start_sim', default_value='True',
@@ -176,6 +187,10 @@ def generate_launch_description():
             'compressed_images': 'True',
             'bridge_cmd_vel': 'True',        # this is how Nav2 reaches the robot
             'bridge_ground_truth': 'True',   # this is what localizes it
+            # Forwarded so `bridge_model_poses:=True` on THIS launch reaches the
+            # sim launch. Without this it was silently swallowed and viewer.py's
+            # --live-poses had no topic to read.
+            'bridge_model_poses': bridge_model_poses,
         }.items(),
         condition=IfCondition(start_sim))
 
@@ -241,6 +256,7 @@ def generate_launch_description():
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_map_cmd)
+    ld.add_action(declare_bridge_model_poses_cmd)
     ld.add_action(declare_start_sim_cmd)
     ld.add_action(declare_headless_cmd)
     ld.add_action(declare_world_cmd)

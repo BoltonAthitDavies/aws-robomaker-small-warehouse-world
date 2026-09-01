@@ -95,7 +95,7 @@ controller_server:
     general_goal_checker:
       # The name must match the goal_checker_id the stock BT's FollowPath passes.
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 3.0
+      xy_goal_tolerance: 1.0
       # 0.60 rad ~ 34 deg, deliberately loose. With no rotate-in-place the final
       # heading comes entirely from how well RPP tracked the last Dubins segment;
       # a tight tolerance produces a robot that circles the goal forever.

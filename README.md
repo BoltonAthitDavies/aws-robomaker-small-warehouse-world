@@ -576,8 +576,27 @@ The symptom looks exactly like a planner bug: the robot drives past a waypoint, 
 waypoint is never consumed, the next plan is a full circle back to it, and the robot
 orbits -- replanning every 3 s (the tree's `RateController`) and never progressing.
 
-`behavior_trees/nav_through_poses_ackermann.xml` is a copy of nav2's stock tree with
-that radius raised to 1.60 m, just above `min_lookahead_dist`. Raise the two together;
+**And the radius alone is not the fix.** In nav2's stock tree `RemovePassedGoals` sits
+INSIDE `<RateController hz="0.333">`, so the proximity test is evaluated once every 3 s
+while the tree itself ticks at `bt_loop_duration` (10 ms). The robot is only inside a
+via-point's radius for `2*radius/speed` seconds, so the test is missed outright whenever
+
+```
+2 * radius / speed  <  1 / hz
+```
+
+MEASURED at 1.5 m/s with radius 1.60: the robot passed **0.40 m** from a waypoint,
+comfortably inside it, and `number_of_poses_remaining` never decremented. It overshot,
+looped back, and the waypoint was consumed only on the return pass -- 24 s for a route
+that should take 16, with the heading swinging +157/+192/+73/-71/-211 deg as it orbited.
+Raising the radius does not help: at 0.333 Hz you would need `radius > 1.5 * speed` =
+2.25 m, which starts swallowing waypoints you deliberately placed.
+
+`behavior_trees/nav_through_poses_ackermann.xml` therefore does two things: raises the
+radius to 1.60 m (above `min_lookahead_dist`, to cover RPP's corner-cutting) **and moves
+`RemovePassedGoals` outside the `RateController`**, so it is evaluated every tick while
+planning stays throttled at 0.333 Hz. After that change the same route consumed every
+waypoint on the first pass and finished in 16 s with a monotonic 180 deg turn. Raise the two together;
 they are the same quantity seen from two sides. Too large and via-points get consumed
 early, flattening the route you drew.
 

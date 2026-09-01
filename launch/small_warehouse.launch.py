@@ -361,12 +361,22 @@ def generate_launch_description():
         ],
         condition=IfCondition(bridge_ground_truth))
 
-    # dynamic_pose/info carries ONLY the entities that are not static, so it stays
-    # small: in the stock world that is the robot and its links, plus anything you
-    # have made non-static yourself. MEASURED at ~57 Hz with RTF 0.98, i.e. the same
-    # order as the ground-truth odometry, and it scales with RTF like everything
-    # else. /world/default/pose/info is the one to avoid -- 77 entities of which 67
-    # can never move.
+    # pose/info, NOT dynamic_pose/info -- deliberately, and this is load-bearing.
+    #
+    # dynamic_pose/info carries only NON-STATIC entities. That was right while
+    # moving props were rigid bodies, but small_warehouse_dynamic.world now drives
+    # its props with KinematicTrajectory while they stay <static>true</static>
+    # (static props cost no contact solving: 30 dynamic props resting on the floor
+    # measured RTF 0.294 vs 1.005 static, which is what dragged the 30 Hz cameras
+    # to ~9 Hz). Static entities never appear in dynamic_pose/info, so a viewer
+    # subscribing to it draws every prop FROZEN at its spawn pose while gz moves
+    # them -- worse than no overlay, because it looks authoritative.
+    #
+    # pose/info carries everything, moving or not. MEASURED side by side:
+    #   dynamic_pose/info   58 Hz    8 entities/msg   ~115 KB/s
+    #   pose/info           58 Hz  ~149 entities/msg   ~1.0 MB/s
+    # 9x the traffic, and worth it -- this bridge is opt-in (bridge_model_poses,
+    # default False) so it costs nothing unless asked for.
     #
     # Pose_V maps onto tf2_msgs/TFMessage, and each entry's child_frame_id is the
     # model name. This is NOT published on /tf and is not meant for TF: it is a pose
@@ -377,7 +387,7 @@ def generate_launch_description():
         name='model_pose_bridge',
         output='screen',
         arguments=[
-            '/world/default/dynamic_pose/info@tf2_msgs/msg/TFMessage'
+            '/world/default/pose/info@tf2_msgs/msg/TFMessage'
             '[ignition.msgs.Pose_V',
         ],
         condition=IfCondition(bridge_model_poses))
