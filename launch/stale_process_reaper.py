@@ -105,12 +105,23 @@ GROUPS = {
         # duplicates every frame for the next run.
         r'image_bridge.*__node:=cam_image_bridge\b',
     ),
-    # localization_tf.launch.py. ground_truth_localization is ours; the other two
-    # are stock nodes we run under stock names -- see SCOPE above.
+    # localization_tf.launch.py AND localization_rtabmap.launch.py, which are
+    # alternatives for the same edges -- so they share a group and starting either
+    # one reaps the other. ground_truth_localization is ours; the stock nodes we
+    # run under stock names are covered per SCOPE above.
     'localization': (
         r'__node:=ground_truth_localization\b',
         r'__node:=robot_state_publisher\b',
         r'__node:=joint_state_publisher\b',
+        # localization_rtabmap.launch.py. The front-ends matter most: two of them
+        # alive at once both publish odom->vio_body, and tf2 then interleaves two
+        # trajectories into one frame. That reads as a SLAM divergence bug, not as
+        # a duplicate process, which is exactly the failure this file exists to
+        # prevent. rtabmap is matched on its node name; the shim is a bare python3
+        # script so it is matched on its path.
+        r'__node:=vio_body_to_base_footprint\b',
+        r'__node:=(rtabmap|orbslam3|vins_fusion_ros2_node)\b',
+        r'rtab_camera_shim\.py',
     ),
     # The eight lifecycle nodes spelled out in nav2*.launch.py.
     'nav2': (

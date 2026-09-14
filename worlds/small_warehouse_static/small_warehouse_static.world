@@ -151,93 +151,93 @@
     </include> -->
 
     <include>
-      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
-      <name>aws_robomaker_warehouse_Bucket_01_400</name>
-      <pose>-14.512800 -14.985519 0.029223 0 0 1.570796</pose>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_400</name>
+      <pose>-14.512800 -14.985519 0.004223 0 0 1.570796</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
-      <name>aws_robomaker_warehouse_Bucket_01_401</name>
-      <pose>-14.512800 -18.460106 0.029223 0 0 1.570796</pose>
+      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_401</name>
+      <pose>-14.512800 -18.460106 -0.298777 0 0 1.570796</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringC_01_402</name>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_402</name>
       <pose>-18.263200 -14.985519 0.004223 0 0 1.570796</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringA_01_403</name>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_403</name>
       <pose>-18.263200 -18.460106 0.004223 0 0 1.570796</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringD_01_404</name>
-      <pose>-14.512800 15.743981 -0.298777 0 0 -1.570796</pose>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_404</name>
+      <pose>-14.512800 15.743981 0.004223 0 0 -1.570796</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
-      <name>aws_robomaker_warehouse_Bucket_01_405</name>
-      <pose>-18.263200 15.743981 0.029223 0 0 -1.570796</pose>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_405</name>
+      <pose>-18.263200 15.743981 0.004223 0 0 -1.570796</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringC_01_406</name>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_406</name>
       <pose>-14.512800 12.269394 0.004223 0 0 -1.570796</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
-      <name>aws_robomaker_warehouse_Bucket_01_407</name>
-      <pose>-18.263200 12.269394 0.029223 0 0 -1.570796</pose>
-      <static>true</static>
-    </include>
-    <include>
       <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringA_01_408</name>
-      <pose>-2.971250 18.435919 0.004223 0 0 -1.570796</pose>
-      <static>true</static>
-    </include>
-    <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringA_01_409</name>
-      <pose>-2.971250 14.912956 0.004223 0 0 -1.570796</pose>
-      <static>true</static>
-    </include>
-    <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringA_01_410</name>
-      <pose>-7.681350 14.912956 0.004223 0 0 -1.570796</pose>
-      <static>true</static>
-    </include>
-    <include>
-      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
-      <name>aws_robomaker_warehouse_Bucket_01_411</name>
-      <pose>1.738850 18.435919 0.029223 0 0 -1.570796</pose>
-      <static>true</static>
-    </include>
-    <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringA_01_412</name>
-      <pose>-7.681350 18.435919 0.004223 0 0 -1.570796</pose>
+      <name>aws_robomaker_warehouse_ClutteringA_01_407</name>
+      <pose>-18.263200 12.269394 0.004223 0 0 -1.570796</pose>
       <static>true</static>
     </include>
     <include>
       <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringC_01_413</name>
-      <pose>1.738850 14.912956 0.004223 0 0 -1.570796</pose>
+      <name>aws_robomaker_warehouse_ClutteringC_01_408</name>
+      <pose>-2.971250 18.435919 0.004223 0 0 -1.570796</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_409</name>
+      <pose>-2.971250 14.912956 0.004223 0 0 -1.570796</pose>
       <static>true</static>
     </include>
     <include>
       <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringD_01_414</name>
-      <pose>17.867517 -18.355471 -0.298777 0 0 0.000000</pose>
+      <name>aws_robomaker_warehouse_ClutteringD_01_410</name>
+      <pose>-7.681350 14.912956 -0.298777 0 0 -1.570796</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_411</name>
+      <pose>1.738850 18.435919 0.004223 0 0 -1.570796</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_412</name>
+      <pose>-7.681350 18.435919 0.004223 0 0 -1.570796</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_413</name>
+      <pose>1.738850 14.912956 0.004223 0 0 -1.570796</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_414</name>
+      <pose>17.867517 -18.355471 0.029223 0 0 0.000000</pose>
       <static>true</static>
     </include>
     <include>
@@ -259,39 +259,39 @@
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringC_01_418</name>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_418</name>
       <pose>13.383750 -18.355471 0.004223 0 0 0.000000</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringD_01_419</name>
-      <pose>8.899983 -14.671612 -0.298777 0 0 0.000000</pose>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_419</name>
+      <pose>8.899983 -14.671612 0.004223 0 0 0.000000</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringC_01_420</name>
-      <pose>13.383750 -6.570696 0.004223 0 0 0.000000</pose>
+      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_420</name>
+      <pose>13.383750 -6.570696 -0.298777 0 0 0.000000</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_421</name>
+      <pose>13.383750 -10.254554 0.029223 0 0 0.000000</pose>
       <static>true</static>
     </include>
     <include>
       <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringA_01_421</name>
-      <pose>13.383750 -10.254554 0.004223 0 0 0.000000</pose>
-      <static>true</static>
-    </include>
-    <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringC_01_422</name>
+      <name>aws_robomaker_warehouse_ClutteringA_01_422</name>
       <pose>8.899983 -10.254554 0.004223 0 0 0.000000</pose>
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringA_01_423</name>
-      <pose>8.899983 -6.570696 0.004223 0 0 0.000000</pose>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_423</name>
+      <pose>8.899983 -6.570696 0.029223 0 0 0.000000</pose>
       <static>true</static>
     </include>
     <include>
@@ -301,33 +301,33 @@
       <static>true</static>
     </include>
     <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringD_01_425</name>
-      <pose>17.867517 1.530221 -0.298777 0 0 1.500355</pose>
-      <static>true</static>
-    </include>
-    <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringD_01_426</name>
-      <pose>13.383750 1.530221 -0.298777 0 0 1.500355</pose>
-      <static>true</static>
-    </include>
-    <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringA_01_427</name>
-      <pose>13.383750 -2.153638 0.004223 0 0 1.500355</pose>
-      <static>true</static>
-    </include>
-    <include>
-      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringA_01_428</name>
-      <pose>8.899983 -2.153638 0.004223 0 0 1.500355</pose>
-      <static>true</static>
-    </include>
-    <include>
       <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
-      <name>aws_robomaker_warehouse_ClutteringC_01_429</name>
-      <pose>8.899983 1.530221 0.004223 0 0 1.500355</pose>
+      <name>aws_robomaker_warehouse_ClutteringC_01_425</name>
+      <pose>17.867517 1.530221 0.004223 0 0 1.500355</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_426</name>
+      <pose>13.383750 1.530221 0.029223 0 0 1.500355</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_427</name>
+      <pose>13.383750 -2.153638 0.029223 0 0 1.500355</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_428</name>
+      <pose>8.899983 -2.153638 -0.298777 0 0 1.500355</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_429</name>
+      <pose>8.899983 1.530221 -0.298777 0 0 1.500355</pose>
       <static>true</static>
     </include>
 
@@ -404,7 +404,7 @@
         <scene>scene</scene>
         <ambient_light>0.7 0.7 0.7</ambient_light>
         <background_color>0.25 0.28 0.32</background_color>
-        <camera_pose>0.0 0.0 10.0 0.0 1.5708 -1.5708</camera_pose>
+        <camera_pose>-18.000000 -18.000000 8.500000 0.000000 0.286521 0.785398</camera_pose>
       </plugin>
 
       <!-- Embedding <gui> in the world replaces gui.config outright rather than

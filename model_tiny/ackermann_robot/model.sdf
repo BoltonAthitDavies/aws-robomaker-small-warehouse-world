@@ -1,0 +1,940 @@
+<?xml version="1.0" ?>
+<!--
+  Generated from urdf/ackermann_robot.urdf via `ign sdf -p`, then edited.
+  Regenerate with that command if the URDF changes; the four edits are:
+    1. Gazebo Classic <script>Gazebo/Blue</script> material blocks removed.
+    2. Converter float noise collapsed.
+    3. AckermannSteering system added (see the comment near the bottom).
+    4. IMU and stereo camera <sensor> elements added, plus the cam1 / cam1_undis
+       frames and the cam1 visual+collision they need. The URDF carries matching
+       definitions, but a regeneration will still need checking against them:
+       cam1 is a hand-placed stereo partner, not converter output.
+
+  Link layout note: every fixed-joint child (base_link, imu_link, cam_link1,
+  cam_link2, cam0, cam0_undis, cam0_depth) is lumped into base_footprint by the
+  URDF converter, which is exactly what Gazebo does when spawning the URDF
+  directly. Their frames survive as <frame> elements at the end of the file.
+  Sensors therefore hang off base_footprint and locate themselves with
+  <pose relative_to='...'> against those surviving frames.
+-->
+
+<sdf version='1.9'>
+  <model name='ackermann_robot'>
+    <link name='base_footprint'>
+      <inertial>
+        <pose>0.003346535 0 0.097940594 0 0 0</pose>
+        <mass>10.1</mass>
+        <inertia>
+          <ixx>0.148403564</ixx>
+          <ixy>0</ixy>
+          <ixz>-0.003179208</ixz>
+          <iyy>0.314714851</iyy>
+          <iyz>0</iyz>
+          <izz>0.453831287</izz>
+        </inertia>
+      </inertial>
+      <collision name='base_footprint_fixed_joint_lump__base_link_collision'>
+        <pose>0 0 0.097 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.6 0.463 0.05</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__cam_link1_collision_1'>
+        <pose>0.409 0 0.3815 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.2025 0.02 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__cam_link2_collision_2'>
+        <pose>0.496 0 0.3815 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.087 0.02 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__cam0_collision_3'>
+        <pose>0.496 0.0936 0.4395 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <!-- Hand-added, not converter output: the stereo partner for cam0, one
+           calibrated baseline (93.6 mm) along cam0's optical +X, which is the
+           robot's right, i.e. base -Y. cam1 is the camera on the centreline
+           (base y=0); cam0 is the one offset, to base +Y. -->
+      <collision name='cam1_collision'>
+        <pose>0.496 0 0.4395 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__cam0_depth_collision_4'>
+        <pose>0.496 0.0936 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.028 0.028</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__cam0_undis_collision_5'>
+        <pose>0.496 0.0936 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.028 0.028</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__imu_link_collision_6'>
+        <pose>0.338 0 0.192 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.02</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='base_footprint_fixed_joint_lump__base_link_visual'>
+        <pose>0 0 0.097 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.6 0.463 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+          <ambient>0 0 1 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__cam_link1_visual_1'>
+        <pose>0.409 0 0.3815 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.2025 0.02 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+          <ambient>0 0 1 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__cam_link2_visual_2'>
+        <pose>0.496 0 0.3815 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.087 0.02 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+          <ambient>0 0 1 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__cam0_visual_3'>
+        <pose>0.496 0.0936 0.4395 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+          <ambient>0 0 1 1</ambient>
+        </material>
+      </visual>
+      <visual name='cam1_visual'>
+        <pose>0.496 0 0.4395 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 0 1 1</diffuse>
+          <ambient>0 0 1 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__cam0_depth_visual_4'>
+        <pose>0.496 0.0936 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.028 0.028</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 1 0 1</diffuse>
+          <ambient>0 1 0 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__cam0_undis_visual_5'>
+        <pose>0.496 0.0936 0.4395 -1.5707963268 0 -1.5707963268</pose>
+        <geometry>
+          <box>
+            <size>0.028 0.028 0.028</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 1 0 1</diffuse>
+          <ambient>0 1 0 1</ambient>
+        </material>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__imu_link_visual_6'>
+        <pose>0.338 0 0.192 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0 1 0 1</diffuse>
+          <ambient>0 1 0 1</ambient>
+        </material>
+      </visual>
+
+      <!--
+        SENSORS. These feed VINS-Fusion via
+        vins_fusion_ros2/config/wil_sim/stereo_imu.yaml; the ros_gz_bridge that
+        puts them on ROS topics lives in launch/small_warehouse.launch.py.
+
+        They attach to base_footprint because it is the only link left after the
+        URDF converter's lumping (see the header note); the pose is what places
+        them, not the parent link.
+
+        Requires ignition-gazebo-sensors-system (cameras) and
+        ignition-gazebo-imu-system (IMU) in the world. Both worlds in this
+        package declare them.
+      -->
+
+      <!--
+        Attached to 'cam0', NOT 'cam0_undis'. A gz camera sensor looks down its
+        own +X axis, so it wants the x-forward frame. cam0_undis / cam0_depth are
+        ROS optical frames (x-right, y-down, z-forward) and would aim the camera
+        out the robot's right side.
+
+        Ideal pinhole: Fortress ships no wide-angle camera implementation
+        (there is no libignition-sensors6-wideangle_camera.so), so the real rig's
+        ~180 deg KANNALA_BRANDT fisheye in config/wil/cam0_fisheye.yaml cannot be
+        reproduced here. Hence the separate config/wil_sim/ calibration.
+
+        90 deg horizontal FOV at 1280 px gives
+          fx = fy = (width/2) / tan(hfov/2) = 640,  cx = 640, cy = 360
+        which is what config/wil_sim/cam0_pinhole.yaml states. Changing
+        horizontal_fov or the image size here means changing that file too.
+      -->
+      <sensor name='cam0' type='camera'>
+        <pose relative_to='cam0'>0 0 0 0 -0 0</pose>
+        <!-- Set explicitly. The default would be
+             /world/default/model/ackermann_robot_001/link/base_footprint/sensor/cam0/image,
+             since the world <include> renames the model to ackermann_robot_001.
+             gz derives the camera_info topic by REPLACING the last element of
+             this one, so info lands on /cam0/camera_info, NOT
+             /cam0/image_raw/camera_info. -->
+        <topic>cam0/image_raw</topic>
+        <update_rate>30</update_rate>
+        <always_on>1</always_on>
+        <visualize>0</visualize>
+        <camera>
+          <horizontal_fov>1.5707963268</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>720</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>100</far>
+          </clip>
+          <!-- A little sensor noise so the feature tracker is not fed a
+               noiseless render, which is unrealistically easy. -->
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.005</stddev>
+          </noise>
+        </camera>
+      </sensor>
+
+      <sensor name='cam1' type='camera'>
+        <pose relative_to='cam1'>0 0 0 0 -0 0</pose>
+        <topic>cam1/image_raw</topic>
+        <update_rate>30</update_rate>
+        <always_on>1</always_on>
+        <visualize>0</visualize>
+        <camera>
+          <horizontal_fov>1.5707963268</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>720</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>100</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.005</stddev>
+          </noise>
+        </camera>
+      </sensor>
+
+      <!--
+        imu_link carries no rotation, so this reports in ROS REP-103 axes
+        (x-forward, y-left, z-up) and reads (0, 0, +9.8) at rest. That is
+        deliberately NOT the real RealSense's x-right/y-down/z-forward
+        convention, which is why config/wil_sim/stereo_imu.yaml needs its own
+        body_T_cam matrices rather than the near-identity ones in config/wil/.
+
+        200 Hz matches the real rig's measured 199.5 Hz and needs no physics
+        change: the worlds step at 1 kHz (<max_step_size>0.001</max_step_size>).
+
+        gz applies <stddev> per sample, so a noise DENSITY N at rate f becomes
+        N * sqrt(f). The densities below are the usual ADIS16448 figures:
+          gyro  0.0003394 rad/s/sqrt(Hz) * sqrt(200) = 0.0048
+          accel 0.004     m/s^2/sqrt(Hz) * sqrt(200) = 0.0566
+        VINS's acc_n / gyr_n in config/wil_sim/stereo_imu.yaml are set a few
+        times looser than these densities, per the usual VINS advice.
+      -->
+      <sensor name='imu' type='imu'>
+        <pose relative_to='imu_link'>0 0 0 0 -0 0</pose>
+        <topic>imu</topic>
+        <update_rate>200</update_rate>
+        <always_on>1</always_on>
+        <imu>
+          <angular_velocity>
+            <x>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0048</stddev>
+                <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+              </noise>
+            </x>
+            <y>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0048</stddev>
+                <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+              </noise>
+            </y>
+            <z>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0048</stddev>
+                <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+              </noise>
+            </z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0566</stddev>
+                <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </x>
+            <y>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0566</stddev>
+                <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </y>
+            <z>
+              <noise type='gaussian'>
+                <mean>0</mean>
+                <stddev>0.0566</stddev>
+                <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
+    </link>
+    <joint name='front_left_steering_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0.21 0.21 0.072 0 0 0</pose>
+      <parent>base_footprint</parent>
+      <child>front_left_steering_knuckle</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-0.6109</lower>
+          <upper>0.6109</upper>
+          <effort>100</effort>
+          <velocity>1</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.1</damping>
+          <friction>0.01</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='front_left_steering_knuckle'>
+      <pose relative_to='front_left_steering_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.2</mass>
+        <inertia>
+          <ixx>0.0002</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0002</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      <collision name='front_left_steering_knuckle_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.1</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='front_left_steering_knuckle_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.1</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0.625 0.625 0.625 1</diffuse>
+          <ambient>0.625 0.625 0.625 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <!--
+      All four WHEEL joints carry damping 0 / friction 0. The URDF originally had
+      0.2 and 0.1, and those two numbers were what actually capped the vehicle's
+      speed, NOT the max_velocity tag.
+
+      Measured, by comparing true world pose against the plugin's wheel odometry:
+      with 0.2/0.1 the robot topped out at ~0.5 m/s of real ground speed no matter
+      what was commanded (0.5, 1, 2 and 3 m/s all produced 0.43-0.53 m/s), while
+      the odometry cheerfully reported the commanded figure because it is dead
+      reckoning off the joint encoders and cannot see slip. With 0/0, a 5 m/s
+      command produces 4.18 m/s measured, the balance being the acceleration ramp.
+
+      The STEERING joints keep their 0.1/0.01; damping is wanted there, and they
+      do not oppose forward motion.
+    -->
+    <joint name='front_left_wheel_joint' type='revolute'>
+      <pose relative_to='front_left_steering_knuckle'>0 0 0 -1.5708 0 0</pose>
+      <parent>front_left_steering_knuckle</parent>
+      <child>front_left_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.0</damping>
+          <friction>0.0</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='front_left_wheel'>
+      <pose relative_to='front_left_wheel_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.000531</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000531</iyy>
+          <iyz>0</iyz>
+          <izz>0.000856</izz>
+        </inertia>
+      </inertial>
+      <collision name='front_left_wheel_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='front_left_wheel_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0 0 0 1</diffuse>
+          <ambient>0 0 0 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='front_right_steering_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0.21 -0.21 0.072 0 0 0</pose>
+      <parent>base_footprint</parent>
+      <child>front_right_steering_knuckle</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-0.6109</lower>
+          <upper>0.6109</upper>
+          <effort>100</effort>
+          <velocity>1</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.1</damping>
+          <friction>0.01</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='front_right_steering_knuckle'>
+      <pose relative_to='front_right_steering_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.2</mass>
+        <inertia>
+          <ixx>0.0002</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0002</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      <collision name='front_right_steering_knuckle_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.1</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='front_right_steering_knuckle_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.1</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>0.625 0.625 0.625 1</diffuse>
+          <ambient>0.625 0.625 0.625 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='front_right_wheel_joint' type='revolute'>
+      <pose relative_to='front_right_steering_knuckle'>0 0 0 -1.5708 0 0</pose>
+      <parent>front_right_steering_knuckle</parent>
+      <child>front_right_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.0</damping>
+          <friction>0.0</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='front_right_wheel'>
+      <pose relative_to='front_right_wheel_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.000531</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000531</iyy>
+          <iyz>0</iyz>
+          <izz>0.000856</izz>
+        </inertia>
+      </inertial>
+      <collision name='front_right_wheel_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='front_right_wheel_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0 0 0 1</diffuse>
+          <ambient>0 0 0 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='rear_left_wheel_joint' type='revolute'>
+      <pose relative_to='base_footprint'>-0.21 0.21 0.072 -1.5708 0 0</pose>
+      <parent>base_footprint</parent>
+      <child>rear_left_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.0</damping>
+          <friction>0.0</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='rear_left_wheel'>
+      <pose relative_to='rear_left_wheel_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.000531</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000531</iyy>
+          <iyz>0</iyz>
+          <izz>0.000856</izz>
+        </inertia>
+      </inertial>
+      <collision name='rear_left_wheel_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='rear_left_wheel_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0 0 0 1</diffuse>
+          <ambient>0 0 0 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='rear_right_wheel_joint' type='revolute'>
+      <pose relative_to='base_footprint'>-0.21 -0.21 0.072 -1.5708 0 0</pose>
+      <parent>base_footprint</parent>
+      <child>rear_right_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.0</damping>
+          <friction>0.0</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='rear_right_wheel'>
+      <pose relative_to='rear_right_wheel_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.000531</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000531</iyy>
+          <iyz>0</iyz>
+          <izz>0.000856</izz>
+        </inertia>
+      </inertial>
+      <collision name='rear_right_wheel_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='rear_right_wheel_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.065</length>
+            <radius>0.0585</radius>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0 0 0 1</diffuse>
+          <ambient>0 0 0 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <frame name='cam0_depth_joint' attached_to='cam0'>
+      <pose>0 0 0 -1.5708 -0 -1.5708</pose>
+    </frame>
+    <frame name='cam0_depth' attached_to='cam0_depth_joint'/>
+    <frame name='cam0_undis_joint' attached_to='cam0'>
+      <pose>0 0 0 -1.5708 -0 -1.5708</pose>
+    </frame>
+    <frame name='cam0_undis' attached_to='cam0_undis_joint'/>
+    <!--
+      +Y (base left) offset so that cam1, NOT cam0, sits on the robot centreline.
+      cam_link2 (the bracket) stays centred; the camera pair hangs off it to the
+      left by one baseline, putting cam0 at base +0.0936 and cam1 at base 0.
+    -->
+    <frame name='cam0_joint' attached_to='cam_link2'>
+      <pose>0 0.0936 0.058 0 -0 0</pose>
+    </frame>
+    <frame name='cam0' attached_to='cam0_joint'/>
+    <!--
+      cam1, the stereo partner. Baseline 0.0936 m, reused verbatim from the real
+      rig's calibrated 93.598 mm (config/wil/stereo_imu.yaml, body_T_cam1) so sim
+      and hardware geometry agree.
+
+      Sign: the calibration puts cam1 on cam0's optical +X, and optical +X is the
+      robot's right, which is base -Y. If the stereo pair ever looks inverted,
+      this sign and the matching one in config/wil_sim/stereo_imu.yaml are the
+      first thing to check.
+
+      This -0.0936 is what lands cam1 on the robot centreline, because cam0_joint
+      offsets the pair by +0.0936 first. Keep the two in step: they must always
+      sum to zero, or cam1 walks off centre.
+
+      cam1_undis mirrors cam0_undis: the ROS optical frame, for anyone wiring up
+      TF later. Nothing in this file points a sensor at it.
+    -->
+    <frame name='cam1_joint' attached_to='cam0'>
+      <pose>0 -0.0936 0 0 -0 0</pose>
+    </frame>
+    <frame name='cam1' attached_to='cam1_joint'/>
+    <frame name='cam1_undis_joint' attached_to='cam1'>
+      <pose>0 0 0 -1.5708 -0 -1.5708</pose>
+    </frame>
+    <frame name='cam1_undis' attached_to='cam1_undis_joint'/>
+    <frame name='cam_link2_joint' attached_to='cam_link1'>
+      <pose>0.087 0 0 0 -0 0</pose>
+    </frame>
+    <frame name='cam_link2' attached_to='cam_link2_joint'/>
+    <frame name='cam_link1_joint' attached_to='base_link'>
+      <pose>0.409 0 0.2845 0 -0 0</pose>
+    </frame>
+    <frame name='cam_link1' attached_to='cam_link1_joint'/>
+    <frame name='imu_joint' attached_to='base_link'>
+      <pose>0.338 0 0.095 0 -0 0</pose>
+    </frame>
+    <frame name='imu_link' attached_to='imu_joint'/>
+    <frame name='base_footprint_joint' attached_to='base_footprint'>
+      <pose>0 0 0.097 0 -0 0</pose>
+    </frame>
+    <frame name='base_link' attached_to='base_footprint_joint'/>
+
+    <!--
+      REPLACES THE URDF's mimic tags. libsdformat12 / Fortress has no mimic
+      joint support and drops them silently on conversion, which would leave
+      both front steering joints free-swinging and unactuated. AckermannSteering
+      drives the rear wheels and computes the correct differing left/right
+      steer angles itself, so mimic is not needed.
+
+      Command it on:  /model/MODEL_NAME/cmd_vel   (geometry_msgs/Twist)
+      i.e. the WORLD-scoped name, not this file's. small_warehouse.world includes
+      the model as ackermann_robot_001, so there the topic is
+      /model/ackermann_robot_001/cmd_vel.
+      Delete this block if you intend to drive the joints from ros2_control.
+    -->
+    <plugin filename="ignition-gazebo-ackermann-steering-system"
+            name="gz::sim::systems::AckermannSteering">
+      <!-- Rear-wheel drive, per the "(DRIVEN)" comments in the URDF. -->
+      <left_joint>rear_left_wheel_joint</left_joint>
+      <right_joint>rear_right_wheel_joint</right_joint>
+      <left_steering_joint>front_left_steering_joint</left_steering_joint>
+      <right_steering_joint>front_right_steering_joint</right_steering_joint>
+      <!-- Measured off the URDF joint origins: axles at x = +/-0.21,
+           wheels and kingpins at y = +/-0.21, wheel radius 0.0585. -->
+      <kingpin_width>0.42</kingpin_width>
+      <wheel_base>0.42</wheel_base>
+      <wheel_separation>0.42</wheel_separation>
+      <wheel_radius>0.0585</wheel_radius>
+      <!-- Matches the +/-0.6109 rad limit on the steering joints. -->
+      <steering_limit>0.6109</steering_limit>
+      <!--
+        Speed cap. AckermannSteering reads these once at load and offers no runtime
+        API, and sdformat 12 has no parameter substitution, so these values ARE the
+        configuration point. small_warehouse.launch.py's max_speed / max_accel
+        arguments work by rewriting a copy of this file before gz parses it; keep
+        the values here and the launch-file defaults in step.
+
+        10 m/s on 0.0585 m wheels means 171 rad/s at the axle. That is fast for a
+        10.1 kg vehicle on a 1 ms physics step, so expect tyre slip and a real gap
+        between commanded and achieved speed near the top of the range. Anything
+        that needs faithful wheel contact should stay well below it.
+
+        Reverse is symmetric, and the acceleration limit is what decides whether the
+        top speed is reachable at all: at 3 m/s^2 it takes 3.3 s and about 17 m of
+        run-up to reach 10 m/s, which is most of the warehouse.
+      -->
+      <min_velocity>-10</min_velocity>
+      <max_velocity>10</max_velocity>
+      <min_acceleration>-3</min_acceleration>
+      <max_acceleration>3</max_acceleration>
+      <odom_publish_frequency>50</odom_publish_frequency>
+    </plugin>
+
+    <!--
+      GROUND TRUTH odometry, for scoring VINS (or anything else) against reality.
+
+      This is a genuinely different quantity from the odometry AckermannSteering
+      publishes above. That one integrates the wheel joints, so it is dead
+      reckoning: it reports the COMMANDED speed even when the tyres are slipping
+      and the robot is barely moving. OdometryPublisher instead reads the model's
+      true world pose out of the ECM and finite-differences it for the twist, so
+      it cannot drift and cannot be fooled by slip.
+
+      The two topics are deliberately named differently. Do NOT let this one
+      default: the default is /model/MODEL_NAME/odometry, which is exactly what
+      AckermannSteering already publishes, and the two would fight over it.
+
+      /ground_truth/* is unscoped, which assumes ONE robot in the world. Give each
+      robot its own topic here if you ever spawn a second.
+
+      gaussian_noise is left off on purpose. This is the reference signal; if you
+      want a noisy odometry source, add noise downstream rather than corrupting
+      the thing you are measuring against.
+    -->
+    <!--
+      NOTE the name: ignition::gazebo::, not gz::sim:: as used by AckermannSteering
+      just above. In this Fortress build (6.17.1) libignition-gazebo6-ackermann-
+      steering-system registers BOTH aliases, but the odometry-publisher library
+      registers only the ignition:: one. Using gz::sim:: here fails with
+      "Could not find a plugin with that name or alias" and the plugin is silently
+      skipped; the world still loads, you just get no topic. Verify with:
+        strings /usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/<lib>.so.6.17.1 \
+          | grep -E '^(gz|ignition)::(sim|gazebo)::systems::'
+    -->
+    <plugin filename="ignition-gazebo-odometry-publisher-system"
+            name="ignition::gazebo::systems::OdometryPublisher">
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <odom_topic>/ground_truth/odometry</odom_topic>
+      <tf_topic>/ground_truth/pose</tf_topic>
+      <!-- 3, not 2: keeps z so a robot that climbs or tips is still described. -->
+      <dimensions>3</dimensions>
+      <odom_publish_frequency>50</odom_publish_frequency>
+    </plugin>
+  </model>
+</sdf>
