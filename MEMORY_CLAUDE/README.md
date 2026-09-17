@@ -895,3 +895,317 @@ freezes the worlds, meshes and maps that `ros2 launch` sees. Nothing errors — 
 simulation just keeps running an older environment, which for recorded VIO runs
 means the bag no longer matches the world it is nominally from. Always
 `--symlink-install` here, or rebuild after every world edit.
+
+---
+
+## 20. Random-occupancy variants `_02` / `_03` / `_04` (2026-09-17)
+
+*Superseded by §22 — the range changed from 3–7 to 7–9. Kept for the selector
+documentation and the reason the draw is seeded.*
+
+Three copies of `small_warehouse_static_01_nofloortexture.world` with a random
+subset of bays emptied, for scene-variation runs. `_01` is the full reference and
+was not touched (md5 verified unchanged before and after).
+
+`clear_bays.py` gained selectors instead of a second near-identical script:
+
+```
+--bays 3,7,11        empty exactly these
+--random 3-7         pick a count uniformly in [3,7], then that many bays
+--seed N             make the draw reproducible
+(none)               empty every bay -- the *_objonwallonly behaviour
+```
+
+Seeds 2 / 3 / 4 for `_02` / `_03` / `_04`, so each world is regenerable from its
+own name rather than from a note.
+
+| bay | zone | `_01` | `_02` | `_03` | `_04` |
+|---|---|---|---|---|---|
+| 0 | west | 4 | 4 | 4 | 4 |
+| 1 | west | 4 | — | 4 | — |
+| 2 | west | 4 | 4 | — | 4 |
+| 3 | west | 4 | 4 | 4 | 4 |
+| 4 | west | 4 | 4 | 4 | — |
+| 5 | stock | 6 | — | — | 6 |
+| 6 | stock | 6 | 6 | 6 | — |
+| 7 | stock | 6 | 6 | 6 | 6 |
+| 8 | stock | 6 | 6 | — | 6 |
+| 9 | stock | 6 | 6 | — | 6 |
+| 10 | east_s | 6 | 6 | 6 | 6 |
+| 11 | east_s | 6 | 6 | 6 | — |
+| 12 | east_s | 6 | 6 | 6 | 6 |
+| 13 | east_n | 6 | — | 6 | 6 |
+| **props** | | **74** | **58** | **52** | **54** |
+| **bays emptied** | | 0 | 3 | 4 | 4 |
+
+Bay 7, 10 and 12 happen to be stocked in all four, and bay 0 and 3 likewise —
+that is the draw, not a constraint. The counts came out 3 / 4 / 4 against a
+uniform [3,7]; an honest draw, but the low end of it, so the three variants differ
+less than the range suggests.
+
+Maps baked to `maps/baked_static_02` … `_04` (10.8% / 10.3% / 10.2% occupied,
+against 13.0% for `_01`). Rebuilt with `--symlink-install` so `ros2 launch` sees
+them — see §19 for why that matters.
+
+---
+
+## 21. Wall objects added to `_01` … `_04` (2026-09-17)
+
+`add_wall_objects.py` run on the four stocked `*_nofloortexture` worlds, giving
+them the same perimeter as `*_objonwallonly`.
+
+| world | bay props | north | south | east | west | wall total |
+|---|---|---|---|---|---|---|
+| `_01` | 74 | 8 | 7 | 15 | 13 | **43** |
+| `_02` | 58 | 8 | 7 | 15 | 14 | **44** |
+| `_03` | 52 | 8 | 7 | 15 | 15 | **45** |
+| `_04` | 54 | 8 | 7 | 15 | 16 | **46** |
+| `objonwallonly` | 0 | 8 | 7 | 15 | 19 | **49** |
+
+**North, south and east are identical in all five; only west varies, and it varies
+with bay occupancy.** The west band (x −20.556 … −19.544) runs alongside the west
+bays, whose first prop column reaches x = −19.344 — a 0.20 m gap against a 0.40 m
+entity margin. So each stocked west bay culls a unit or two, and the count rises
+monotonically as bays empty: 13 → 14 → 15 → 16 → 19. Every skip names the prop
+responsible (all `ClutteringA/C_01` at x = −18.26). The east band is unaffected
+because east bays stop 1.379 m short of their outline.
+
+Bay props are untouched (74 / 58 / 52 / 54 before and after) — the wall script only
+adds its own delimited region.
+
+Maps re-baked: 16.6% / 14.6% / 14.2% / 14.2% occupied, `unreachable free` 8436 in
+all four. Rebuilt with `--symlink-install`.
+
+**Divergence to be aware of:** `small_warehouse_static_01.world` (the *textured*
+twin of `_01_nofloortexture`) was not named in the request and so was left alone.
+The pair now differs by 240 lines rather than the usual 2 — the twin has no wall
+objects. `_02` … `_04` have no textured counterpart, so nothing to keep in step
+there.
+
+---
+
+## 22. Re-rolled to 7–9 empty bays (2026-09-17)
+
+Replaces §20's 3–7. **Re-rolling required going back to full occupancy first** —
+running `clear_bays.py` again on an already-thinned world empties 7–9 *more* bays,
+so the union would have overshot. Each world was refilled to 74 props with
+`fill_bays.py` (default seed 3, the same layout `_01` carries) and then drawn on.
+
+| bay | zone | `_01` | `_02` | `_03` | `_04` |
+|---|---|---|---|---|---|
+| 0 | west | 4 | 4 | 4 | 4 |
+| 1 | west | 4 | — | — | — |
+| 2 | west | 4 | — | — | — |
+| 3 | west | 4 | — | 4 | 4 |
+| 4 | west | 4 | — | 4 | — |
+| 5 | stock | 6 | — | — | 6 |
+| 6 | stock | 6 | 6 | 6 | — |
+| 7 | stock | 6 | 6 | — | — |
+| 8 | stock | 6 | 6 | — | 6 |
+| 9 | stock | 6 | — | — | 6 |
+| 10 | east_s | 6 | 6 | 6 | 6 |
+| 11 | east_s | 6 | 6 | 6 | — |
+| 12 | east_s | 6 | 6 | 6 | — |
+| 13 | east_n | 6 | — | — | 6 |
+| **bay props** | | **74** | **40** | **36** | **38** |
+| **bays empty** | | 0 | **7** | **7** | **7** |
+| **wall objects** | | 43 | **48** | **46** | **48** |
+
+**All three drew 7.** `random.Random(s).randint(7, 9)` returns 7 for s = 2, 3 and
+4 — a legitimate uniform sample, and the same thing happened at 3–7 (3, 4, 4).
+Three draws from a three-wide range landing identically is unremarkable; picking
+different seeds *because* they produce 7/8/9 would be choosing the outcome, so it
+was not done. `--bays` takes an explicit set if a guaranteed spread is wanted.
+
+**The wall objects had to be re-run, and that is a real coupling.** The west band
+(x −20.556 … −19.544) is culled where a west bay's props sit within the 0.40 m
+entity margin, so emptying more west bays frees more band. Left alone, the
+perimeter would have been sized against the *previous* occupancy: 44/45/46 against
+the 48/46/48 the new geometry allows. Bay occupancy and perimeter density are not
+independent in this environment — change one and re-run the other.
+
+`_01` untouched again (md5 verified). Maps re-baked: 13.0% / 12.0% / 12.2%.
+Rebuilt with `--symlink-install`.
+
+---
+
+## 23. Wheel odometry: bridged, and noisy (2026-09-17)
+
+Two additions, because the wheel odometry was neither on ROS nor corruptible.
+
+**Bridged.** `small_warehouse.launch.py` gained `bridge_wheel_odom` (default
+False), publishing AckermannSteering's own odometry as
+`/model/<robot_name>/odometry`. It is deliberately a separate node from
+`ground_truth_bridge`: one is dead reckoning, the other is the reference, and you
+may want either without the other.
+
+**Noise had to go downstream, and that is not a preference.** Fortress's
+AckermannSteering exposes 16 SDF parameters — checked against the library's own
+symbol table, not the docs — and **none is noise**:
+
+```
+left_joint  right_joint  left_steering_joint  right_steering_joint
+wheel_base  wheel_radius  wheel_separation  steering_limit
+min/max_velocity  min/max_acceleration
+odom_topic  tf_topic  child_frame_id  odom_publish_frequency
+```
+
+So `script/wheel_odom_noise.py` republishes with error added.
+
+### The model, and why jitter alone would be wrong
+
+Real dead reckoning is wrong because errors **integrate**. Per-message Gaussian
+jitter averages out and never drifts, which is the opposite of the failure being
+modelled. The node corrupts the twist and then integrates the corrupted twist into
+its own pose:
+
+```
+v' = v * scale_v + N(0, sigma_v)      scale_v 1.02  sigma_v 0.02 m/s
+w' = w * scale_w + N(0, sigma_w)      scale_w 0.99  sigma_w 0.01 rad/s
+th' += w' dt ;  x' += v' cos(th') dt ;  y' += v' sin(th') dt
+```
+
+`scale_*` is systematic (wheel radius long, track wide) and gives steady drift;
+`sigma_*` gives a random walk. Covariance is filled in — twist from the sigmas,
+pose growing with elapsed time — so a consumer reading covariance sees uncertainty
+grow rather than trusting a drifting pose.
+
+**Measured end to end** against a synthetic 1 m/s straight line at 50 Hz:
+
+| | |
+|---|---|
+| true distance after 499 msgs | 9.980 m |
+| reported | **10.200 m** |
+| error | **+0.220 m = +2.20%** — exactly `scale_v` 1.02 |
+| lateral / heading drift | −0.002 m, −0.2° — the `sigma_w` walk |
+
+### What it does not touch
+
+`/ground_truth/odometry` is unaffected: different system (`OdometryPublisher`),
+reading the model's true pose from the ECM. Nothing downstream of the wheel
+joints can reach it.
+
+Keyboard control in `viewer.py` is also unaffected — it is **open-loop**, a
+keypress publishes a `Twist` on `/cmd_vel` and nothing reads odometry back.
+
+**The trap worth knowing:** `viewer.py`'s `_find_odom()` falls back to *any*
+`nav_msgs/Odometry` topic not in its small skip set, so a stray odometry feed gets
+silently adopted and drawn as a VIO estimate. The node therefore defaults to
+`/wheel_odom_noisy` rather than something the viewer would grab, and the launch
+argument's own help text says so. Check the `<label> topic: <name>` INFO lines at
+viewer startup if an unexpected trail appears.
+
+---
+
+## 24. Drivetrain and encoder realism (2026-09-17)
+
+Three pieces, all opt-in, none of which touches `/ground_truth/odometry`.
+
+### Encoders exist now
+
+`model.sdf` gained `JointStatePublisher`, naming its six joints explicitly rather
+than defaulting to "all" — the default would silently change the message layout if
+a joint were ever added. Launch argument `bridge_joint_states` (default False)
+puts it on ROS as `sensor_msgs/JointState`; the `ignition.msgs.Model` ↔
+`JointState` mapping is present in this `ros_gz_bridge`.
+
+### `script/encoder_sim.py` — the resolution limit
+
+The raw feed is the solver's continuous float angle. A real incremental encoder
+knows the angle only to `2π/N`. That is not a rounding detail: velocity derived
+from two quantised positions has a **floor of `(2π/N)/dt`**.
+
+Measured, 1024 CPR at 50 Hz, wheel turning at a true constant **0.2 rad/s**:
+
+| | |
+|---|---|
+| tick | 0.006136 rad = **0.36 mm** at the rim |
+| velocity floor | 0.30680 rad/s = **17.9 mm/s** |
+| reported velocity | **0.30680 rad/s** — one tick per sample |
+
+The encoder cannot say 0.2. It says 0 or one whole tick, and nothing between. A
+controller tuned on the exact feed will not behave the same way on this one.
+
+Velocity is **re-derived** from the quantised positions rather than passed
+through. Passing the true velocity beside a quantised position is the trap worth
+naming: it looks quantised while still carrying the exact answer.
+
+### `script/drivetrain_sim.py` — deadband and lag
+
+`AckermannSteering` already clamps acceleration (3 m/s²). It has no notion of a
+deadband or of motor bandwidth. This node sits between teleop and the bridge —
+`cmd_vel_bridge_topic:=/cmd_vel_exec` reroutes the bridge, and teleop keeps
+publishing `/cmd_vel` unchanged.
+
+Measured against a step command:
+
+| command | result |
+|---|---|
+| 0.02 m/s (below the 0.05 deadband) | **0.0000 m/s** — never moves |
+| 1.00 m/s step, t = 0.15 s | 0.633 (first order predicts 0.632) |
+| t = 0.30 s | 0.883 (0.865) |
+| t = 0.45 s | 0.957 (0.950) |
+
+Deadband is applied to the **input, before the lag**. After the lag it would chop
+the tail off every deceleration and make the robot stop abruptly — the opposite of
+the effect being modelled. Steering is **rate limited** rather than lagged, because
+a rack has a maximum speed and a first-order lag would let tiny corrections arrive
+instantly. A command watchdog stops the robot if the publisher goes quiet.
+
+### What is NOT reachable in Fortress, established by inspection
+
+- **Fisheye**: `wide_angle_camera` is a gz-sensors**7** (Garden) library and is
+  absent here. `<sensor type='wideanglecamera'>` parses — sdformat12 accepts the
+  tag — and is then never created. Matching the real rig's KANNALA_BRANDT lens
+  needs a Gazebo upgrade.
+- **Image distortion**: `OgreDistortionPass` exists in
+  `libignition-rendering6-ogre.so` but **not in `ogre2`**, which is the default
+  engine. On ogre2, `<distortion>` fills the `camera_info` D vector and leaves the
+  image pinhole — so a VIO front-end would undistort an undistorted image and
+  score worse for a fake reason.
+
+That leaves a real sim/real gap on the camera side worth stating in the report:
+sim is PINHOLE 1280×720 @ 30 Hz with zero distortion; the rig is KANNALA_BRANDT
+1920 @ 20 Hz. Some of the sim's 26 cm ATE advantage is the lens, not the algorithm.
+
+---
+
+## 25. The launch files are 16 copies, and that bit again (2026-09-17)
+
+`bridge_wheel_odom:=True` produced no topic, and `bridge_joint_states` did not
+exist. Neither the plugin nor the bridge was at fault: the gz side was verified
+publishing `/model/ackermann_robot_001/joint_state` with per-joint position and
+velocity, and the library registers both `ignition::gazebo::` and `gz::sim::`
+plugin names, so the SDF name was fine.
+
+**The per-world launch files are independent COPIES of
+`small_warehouse.launch.py`, not includes.** §23 and §24 edited the base only, so
+15 siblings knew nothing about the new arguments — and `ros2 launch` accepts an
+undeclared `key:=value` on a top-level file without complaint, so the flag was
+silently ignored.
+
+This is the second time this duplication has caused a bug. The first was
+`bridge_model_poses` not reaching `nav2_dynamic.launch.py`; the symptom then was
+also "the flag does nothing".
+
+All 15 patched by anchor (they are *not* a strict subset of the base — they carry
+15 lines of their own, reworded comments and an un-parameterised `cmd_vel`
+remap). Verified: every marker appears exactly once in all 16, and all 16 build a
+valid launch description.
+
+**A patch bug worth recording, because the first attempt looked like it worked.**
+The three new `DeclareLaunchArgument` blocks sit *adjacent with no blank line
+between them* in the base, so extracting one with "start marker to the next
+`\n\n`" captured all three. Appending the other two then duplicated them:
+`declare_cmd_vel_bridge_topic_cmd` ended up defined **three times**, and the file
+still parsed and still ran, because a later definition simply rebinds the name.
+The count check (`grep -c` per marker, expect exactly 1) is what caught it — the
+files were restored from backup and re-patched with the blocks split on
+`\n(?=    declare_)`.
+
+**Still outstanding:** sixteen near-identical 430-line launch files differing only
+in a default world path. Every future change to the launch surface has to be
+applied sixteen times or it silently does not apply. The fix is to make the
+per-world files thin wrappers that `IncludeLaunchDescription` the base with a
+different `world` default — the nav2 and localization launchers already work that
+way, which is why they needed no patch here.

@@ -219,6 +219,9 @@ def generate_launch_description():
     bridge_sensors = LaunchConfiguration('bridge_sensors')
     bridge_cmd_vel = LaunchConfiguration('bridge_cmd_vel')
     bridge_ground_truth = LaunchConfiguration('bridge_ground_truth')
+    bridge_wheel_odom = LaunchConfiguration('bridge_wheel_odom')
+    bridge_joint_states = LaunchConfiguration('bridge_joint_states')
+    cmd_vel_bridge_topic = LaunchConfiguration('cmd_vel_bridge_topic')
     bridge_model_poses = LaunchConfiguration('bridge_model_poses')
     robot_name = LaunchConfiguration('robot_name')
     reap_stale = LaunchConfiguration('reap_stale')
@@ -261,6 +264,31 @@ def generate_launch_description():
         'bridge_ground_truth',
         default_value='True',
         description="Bridge the robot's true-pose odometry onto ROS as /ground_truth/odometry")
+
+    declare_bridge_wheel_odom_cmd = DeclareLaunchArgument(
+        'bridge_wheel_odom',
+        default_value='False',
+        description="Bridge AckermannSteering's wheel (dead-reckoning) odometry "
+                    'onto ROS as /model/<robot_name>/odometry. Off by default: it '
+                    'is not a sensor and not the reference, and an extra Odometry '
+                    'topic on the graph gets auto-adopted by viewer.py as an '
+                    'estimator feed.')
+
+    declare_bridge_joint_states_cmd = DeclareLaunchArgument(
+        'bridge_joint_states',
+        default_value='False',
+        description='Bridge the wheel and steering encoders onto ROS as '
+                    '/model/<robot_name>/joint_state (sensor_msgs/JointState): '
+                    'per-joint position, velocity and effort. Position times the '
+                    '0.0585 m wheel radius is distance travelled by that wheel.')
+
+    declare_cmd_vel_bridge_topic_cmd = DeclareLaunchArgument(
+        'cmd_vel_bridge_topic',
+        default_value='/cmd_vel',
+        description='ROS topic the cmd_vel bridge listens on. Point it at '
+                    '/cmd_vel_exec to insert script/drivetrain_sim.py between the '
+                    'teleop and the simulator, giving the drivetrain a deadband '
+                    'and motor lag. Teleop keeps publishing /cmd_vel either way.')
 
     declare_bridge_model_poses_cmd = DeclareLaunchArgument(
         'bridge_model_poses',
@@ -370,7 +398,7 @@ def generate_launch_description():
         output='screen',
         arguments=[['/model/', robot_name,
                     '/cmd_vel@geometry_msgs/msg/Twist]ignition.msgs.Twist']],
-        remappings=[(['/model/', robot_name, '/cmd_vel'], '/cmd_vel')],
+        remappings=[(['/model/', robot_name, '/cmd_vel'], cmd_vel_bridge_topic)],
         condition=IfCondition(bridge_cmd_vel))
 
     # Ground truth, from the OdometryPublisher system in model.sdf. Separate from
@@ -380,6 +408,24 @@ def generate_launch_description():
     #
     # Not to be confused with the AckermannSteering wheel odometry on
     # /model/<robot_name>/odometry, which is dead reckoning and is not bridged.
+    start_wheel_odom_bridge_cmd = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='wheel_odom_bridge',
+        output='screen',
+        arguments=[['/model/', robot_name,
+                    '/odometry@nav_msgs/msg/Odometry[ignition.msgs.Odometry']],
+        condition=IfCondition(bridge_wheel_odom))
+
+    start_joint_state_bridge_cmd = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='joint_state_bridge',
+        output='screen',
+        arguments=[['/model/', robot_name,
+                    '/joint_state@sensor_msgs/msg/JointState[ignition.msgs.Model']],
+        condition=IfCondition(bridge_joint_states))
+
     start_ground_truth_bridge_cmd = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -421,6 +467,9 @@ def generate_launch_description():
     ld.add_action(declare_compressed_images_cmd)
     ld.add_action(declare_bridge_cmd_vel_cmd)
     ld.add_action(declare_bridge_ground_truth_cmd)
+    ld.add_action(declare_bridge_wheel_odom_cmd)
+    ld.add_action(declare_bridge_joint_states_cmd)
+    ld.add_action(declare_cmd_vel_bridge_topic_cmd)
     ld.add_action(declare_bridge_model_poses_cmd)
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_max_speed_cmd)
@@ -447,6 +496,8 @@ def generate_launch_description():
     ld.add_action(start_sensor_bridge_cmd)
     ld.add_action(start_cmd_vel_bridge_cmd)
     ld.add_action(start_ground_truth_bridge_cmd)
+    ld.add_action(start_wheel_odom_bridge_cmd)
+    ld.add_action(start_joint_state_bridge_cmd)
     ld.add_action(start_model_pose_bridge_cmd)
 
     return ld

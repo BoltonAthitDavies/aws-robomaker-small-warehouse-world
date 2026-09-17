@@ -235,6 +235,7 @@ def generate_launch_description():
         'bridge_ground_truth',
         default_value='True',
         description="Bridge the robot's true-pose odometry onto ROS as /ground_truth/odometry")
+
     declare_bridge_wheel_odom_cmd = DeclareLaunchArgument(
         'bridge_wheel_odom',
         default_value='False',
@@ -243,6 +244,7 @@ def generate_launch_description():
                     'is not a sensor and not the reference, and an extra Odometry '
                     'topic on the graph gets auto-adopted by viewer.py as an '
                     'estimator feed.')
+
     declare_bridge_joint_states_cmd = DeclareLaunchArgument(
         'bridge_joint_states',
         default_value='False',
@@ -250,6 +252,7 @@ def generate_launch_description():
                     '/model/<robot_name>/joint_state (sensor_msgs/JointState): '
                     'per-joint position, velocity and effort. Position times the '
                     '0.0585 m wheel radius is distance travelled by that wheel.')
+
     declare_cmd_vel_bridge_topic_cmd = DeclareLaunchArgument(
         'cmd_vel_bridge_topic',
         default_value='/cmd_vel',
@@ -257,7 +260,6 @@ def generate_launch_description():
                     '/cmd_vel_exec to insert script/drivetrain_sim.py between the '
                     'teleop and the simulator, giving the drivetrain a deadband '
                     'and motor lag. Teleop keeps publishing /cmd_vel either way.')
-
 
     declare_bridge_model_poses_cmd = DeclareLaunchArgument(
         'bridge_model_poses',
@@ -296,7 +298,7 @@ def generate_launch_description():
     declare_world_cmd = DeclareLaunchArgument(
         'world',
         default_value=os.path.join(
-            pkg_share, 'worlds', 'small_warehouse', 'small_warehouse.world'),
+            pkg_share, 'worlds', 'small_warehouse_static', 'small_warehouse_static_04_nofloortexture.world'),
         description='Full path to the world file to load')
 
     declare_verbosity_cmd = DeclareLaunchArgument(
@@ -376,7 +378,25 @@ def generate_launch_description():
     # meant to look like real hardware.
     #
     # Not to be confused with the AckermannSteering wheel odometry on
-    # /model/<robot_name>/odometry, bridged separately below and off by default.
+    # /model/<robot_name>/odometry, which is dead reckoning and is not bridged.
+    start_wheel_odom_bridge_cmd = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='wheel_odom_bridge',
+        output='screen',
+        arguments=[['/model/', robot_name,
+                    '/odometry@nav_msgs/msg/Odometry[ignition.msgs.Odometry']],
+        condition=IfCondition(bridge_wheel_odom))
+
+    start_joint_state_bridge_cmd = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='joint_state_bridge',
+        output='screen',
+        arguments=[['/model/', robot_name,
+                    '/joint_state@sensor_msgs/msg/JointState[ignition.msgs.Model']],
+        condition=IfCondition(bridge_joint_states))
+
     start_ground_truth_bridge_cmd = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -387,58 +407,22 @@ def generate_launch_description():
         ],
         condition=IfCondition(bridge_ground_truth))
 
-    # AckermannSteering's own odometry: it integrates the wheel joints, so it is
-    # DEAD RECKONING. It reports the commanded speed even while the tyres slip,
-    # and it drifts. That is exactly why it is useful -- and exactly why it must
-    # not be confused with /ground_truth/odometry above, which reads the true pose
-    # from the ECM and cannot drift.
+    # THIS WORLD USES pose/info, NOT dynamic_pose/info -- deliberately.
     #
-    # Kept out of ground_truth_bridge on purpose: you may want the reference
-    # without the dead reckoning, or the dead reckoning without the reference.
+    # dynamic_pose/info carries only NON-STATIC entities. That was the right choice
+    # while the bay props were rigid bodies, but they are now <static>true</static>
+    # driven kinematically by KinematicTrajectory (static props cost no contact
+    # solving: 30 dynamic props on the floor measured RTF 0.294 vs 1.005 static,
+    # which is what dragged the 30 Hz cameras down to ~9 Hz). Static entities are
+    # absent from dynamic_pose/info, so subscribing to it shows all 30 props FROZEN
+    # at their spawn poses while gz actually moves them -- worse than no overlay,
+    # because it looks authoritative.
     #
-    # The plugin has no noise parameter (16 SDF params, none of them noise), so
-    # this publishes clean. script/wheel_odom_noise.py adds the error downstream.
-    start_wheel_odom_bridge_cmd = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='wheel_odom_bridge',
-        output='screen',
-        arguments=[['/model/', robot_name,
-                    '/odometry@nav_msgs/msg/Odometry[ignition.msgs.Odometry']],
-        condition=IfCondition(bridge_wheel_odom))
-
-    # Wheel / steering encoders, from the JointStatePublisher system in model.sdf.
-    # ignition.msgs.Model carries per-joint position, velocity and effort; the
-    # bridge maps that onto sensor_msgs/JointState.
-    #
-    # Off by default like the other non-sensor feeds. These are the TRUE joint
-    # angles, not quantised counts: script/encoder_sim.py adds the resolution
-    # limit downstream.
-    start_joint_state_bridge_cmd = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='joint_state_bridge',
-        output='screen',
-        arguments=[['/model/', robot_name,
-                    '/joint_state@sensor_msgs/msg/JointState[ignition.msgs.Model']],
-        condition=IfCondition(bridge_joint_states))
-
-    # pose/info, NOT dynamic_pose/info -- deliberately, and this is load-bearing.
-    #
-    # dynamic_pose/info carries only NON-STATIC entities. That was right while
-    # moving props were rigid bodies, but small_warehouse_dynamic.world now drives
-    # its props with KinematicTrajectory while they stay <static>true</static>
-    # (static props cost no contact solving: 30 dynamic props resting on the floor
-    # measured RTF 0.294 vs 1.005 static, which is what dragged the 30 Hz cameras
-    # to ~9 Hz). Static entities never appear in dynamic_pose/info, so a viewer
-    # subscribing to it draws every prop FROZEN at its spawn pose while gz moves
-    # them -- worse than no overlay, because it looks authoritative.
-    #
-    # pose/info carries everything, moving or not. MEASURED side by side:
-    #   dynamic_pose/info   58 Hz    8 entities/msg   ~115 KB/s
+    # pose/info carries everything, moving or not. MEASURED side by side here:
+    #   dynamic_pose/info   58 Hz    8 entities/msg    ~115 KB/s
     #   pose/info           58 Hz  ~149 entities/msg   ~1.0 MB/s
-    # 9x the traffic, and worth it -- this bridge is opt-in (bridge_model_poses,
-    # default False) so it costs nothing unless asked for.
+    # 9x the traffic, and worth it -- this bridge is opt-in
+    # (bridge_model_poses, default False) so it costs nothing unless asked for.
     #
     # Pose_V maps onto tf2_msgs/TFMessage, and each entry's child_frame_id is the
     # model name. This is NOT published on /tf and is not meant for TF: it is a pose

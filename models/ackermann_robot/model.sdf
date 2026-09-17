@@ -936,5 +936,35 @@
       <dimensions>3</dimensions>
       <odom_publish_frequency>50</odom_publish_frequency>
     </plugin>
+    <!--
+      Wheel and steering ENCODERS. JointStatePublisher reports each joint's
+      position (rad), velocity (rad/s) and effort, which is what a real encoder
+      integrates: position * wheel_radius (0.0585) is distance travelled by that
+      wheel.
+
+      Named explicitly rather than left to default. With no <joint_name> the
+      system publishes EVERY joint in the model, which here would add nothing but
+      noise, and silently change the message layout if a joint is ever added.
+
+      This is the true solver angle, NOT a quantised count; a real encoder has
+      finite resolution (1024 CPR -> 0.0061 rad) which sets a floor on low-speed
+      velocity estimation; script/encoder_sim.py adds that downstream, for the
+      same reason the odometry noise lives downstream: do not corrupt the signal
+      you measure against.
+
+      Slip shows up here as a DISCREPANCY, not as error: the joint angle is
+      always true, so encoder-integrated distance over-reads whenever the tyres
+      break traction. That is the behaviour you want from an encoder.
+    -->
+    <plugin filename="ignition-gazebo-joint-state-publisher-system"
+            name="ignition::gazebo::systems::JointStatePublisher">
+      <topic>/model/ackermann_robot_001/joint_state</topic>
+      <joint_name>front_left_steering_joint</joint_name>
+      <joint_name>front_right_steering_joint</joint_name>
+      <joint_name>front_left_wheel_joint</joint_name>
+      <joint_name>front_right_wheel_joint</joint_name>
+      <joint_name>rear_left_wheel_joint</joint_name>
+      <joint_name>rear_right_wheel_joint</joint_name>
+    </plugin>
   </model>
 </sdf>
