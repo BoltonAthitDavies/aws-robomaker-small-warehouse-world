@@ -1,0 +1,1128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sdf version="1.7">
+  <world name="default">
+
+    <gravity>0 0 -9.8</gravity>
+
+    <!-- gz-sim selects its physics engine via gz-physics (DART by default),
+         so the SDF type attribute is informational only. -->
+    <physics name="default_physics" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+    </physics>
+
+    <!-- Fortress only auto-loads its default systems when a world declares no
+         plugins at all, so every system this world needs is listed here. -->
+    <plugin filename="ignition-gazebo-physics-system"
+            name="gz::sim::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system"
+            name="gz::sim::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"/>
+    <!-- Present so a robot spawned into this world gets working sensors
+         without having to edit the world. Sensors covers the rendering sensors
+         (camera, lidar, depth); the IMU is a separate system and an
+         <sensor type="imu"> is silently inert without it. -->
+    <plugin filename="ignition-gazebo-sensors-system"
+            name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="ignition-gazebo-imu-system"
+            name="gz::sim::systems::Imu"/>
+
+    <scene>
+      <ambient>0.7 0.7 0.7 1</ambient>
+      <background>0.25 0.28 0.32 1</background>
+      <shadows>false</shadows>
+      <!-- The default 1 m grid draws straight through the warehouse floor. -->
+      <grid>false</grid>
+    </scene>
+
+    <light name="warehouse_fill" type="directional">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 20 0 0 0</pose>
+      <diffuse>0.7 0.7 0.7 1</diffuse>
+      <specular>0.15 0.15 0.15 1</specular>
+      <direction>-0.4 0.3 -0.9</direction>
+    </light>
+
+    <!-- cast_shadows is off: each shadow-casting point light costs a six-face
+         cubemap render per frame in ogre2, and this one sits directly under the
+         roof plane where it would shadow the whole interior. -->
+    <light name="Warehouse_CeilingLight_003" type="point">
+      <pose>0 0 8.5 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>80</range>
+        <!-- constant raised from the original 0.3: at d=0 the Ogre attenuation
+             divisor 1/(c + l*d + q*d^2) overshoots 1.0 and blows out the ceiling. -->
+        <constant>0.4</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+      <direction>0 0 -1</direction>
+    </light>
+
+    <include>
+      <uri>model://aws_robomaker_warehouse_RoofB_01</uri>
+      <name>aws_robomaker_warehouse_RoofB_01_001</name>
+      <pose>0.0 0.0 0 0 0 0</pose>
+    </include>
+
+    <!-- <include>
+      <uri>model://aws_robomaker_warehouse_ShelfF_01</uri>
+      <name>aws_robomaker_warehouse_ShelfF_01_001</name>
+      <pose>19.400000 -11.276500 0 0 0 0.000000</pose>
+    </include> -->
+
+    <include>
+      <uri>model://aws_robomaker_warehouse_WallB_01</uri>
+      <name>aws_robomaker_warehouse_WallB_01_001</name>
+      <pose>0.0 0.0 0 0 0 0</pose>
+    </include>
+
+    <!-- <include>
+      <uri>model://aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_001</name>
+      <pose>-16.500000 -19.500000 0 0 0 0.000000</pose>
+    </include>
+
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_002</name>
+      <pose>9.000000 -19.500000 0 0 0 0.000000</pose>
+    </include>
+
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_003</name>
+      <pose>14.000000 -19.500000 0 0 0 0.000000</pose>
+    </include>
+
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfD_01</uri>
+      <name>aws_robomaker_warehouse_ShelfD_01_001</name>
+      <pose>-16.500000 20.000000 0 0 0 0.000000</pose>
+    </include>
+
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfD_01</uri>
+      <name>aws_robomaker_warehouse_ShelfD_01_002</name>
+      <pose>-5.000000 20.000000 0 0 0 0.000000</pose>
+    </include>
+
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfD_01</uri>
+      <name>aws_robomaker_warehouse_ShelfD_01_003</name>
+      <pose>0.000000 20.000000 0 0 0 0.000000</pose>
+    </include> -->
+
+
+    <!-- <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_001</name>
+      <pose>-0.061684 6.135864 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_002</name>
+      <pose>-0.061684 3.039 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_003</name>
+      <pose>-0.061684 -6.6493 0 0 0 0</pose>
+    </include> -->
+
+    <include>
+      <uri>model://aws_robomaker_warehouse_GroundB_01_bayline</uri>
+      <name>aws_robomaker_warehouse_GroundB_01_bayline_001</name>
+      <pose>0.0 0.0 -0.090092 0 0 0</pose>
+    </include>
+
+    <!-- <include>
+      <uri>model://aws_robomaker_warehouse_Lamp_01</uri>
+      <name>aws_robomaker_warehouse_Lamp_01_005</name>
+      <pose>0 0 -4 0 0 0</pose>
+    </include> -->
+
+    <!-- ===== BEGIN near-wall objects : generated by script/add_wall_objects.py ===== -->
+    <!-- Each group below is plain includes with nothing nested inside, so wrapping one -->
+    <!-- group in an XML comment to hide it is legal. Re-running the script restores it. -->
+    <!-- ==== north wall: 8 object(s) : three rows across the top pocket, one along the north-west arm ==== -->
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfD_01</uri>
+      <name>aws_robomaker_warehouse_ShelfD_01_101</name>
+      <pose>8.270000 20.082000 0.004923 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_102</name>
+      <pose>11.206500 20.081000 0.034223 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_TrashCanC_01</uri>
+      <name>aws_robomaker_warehouse_TrashCanC_01_103</name>
+      <pose>12.923500 20.067500 0.001223 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_104</name>
+      <pose>14.443500 20.252000 0.022323 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfD_01</uri>
+      <name>aws_robomaker_warehouse_ShelfD_01_105</name>
+      <pose>17.183000 20.082000 0.004923 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_106</name>
+      <pose>19.922500 20.252000 0.022323 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfD_01</uri>
+      <name>aws_robomaker_warehouse_ShelfD_01_107</name>
+      <pose>-17.216000 20.082000 0.004923 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_108</name>
+      <pose>-14.279500 20.081000 0.034223 0 0 1.570796</pose>
+    </include>
+    <!-- ==== end north wall ==== -->
+
+    <!-- ==== south wall: 7 object(s) : shelving on the wall, jacks parked behind the walkway line ==== -->
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_109</name>
+      <pose>-10.241000 -20.082000 0.004923 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_110</name>
+      <pose>-7.304500 -20.081000 0.034223 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_TrashCanC_01</uri>
+      <name>aws_robomaker_warehouse_TrashCanC_01_111</name>
+      <pose>-5.587500 -20.067500 0.001223 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_112</name>
+      <pose>-4.067500 -20.252000 0.022323 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_113</name>
+      <pose>-1.328000 -20.082000 0.004923 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_114</name>
+      <pose>1.608500 -20.081000 0.034223 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_TrashCanC_01</uri>
+      <name>aws_robomaker_warehouse_TrashCanC_01_115</name>
+      <pose>3.325500 -20.067500 0.001223 0 0 0.000000</pose>
+    </include>
+    <!-- ==== end south wall ==== -->
+
+    <!-- ==== east wall: 14 object(s) : one row down the east wall, in the segments the bays leave free ==== -->
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_116</name>
+      <pose>20.066000 5.836500 0.034223 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_TrashCanC_01</uri>
+      <name>aws_robomaker_warehouse_TrashCanC_01_117</name>
+      <pose>20.052500 7.553500 0.001223 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_118</name>
+      <pose>20.067000 -18.563000 0.004923 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_119</name>
+      <pose>20.066000 -15.626500 0.034223 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_TrashCanC_01</uri>
+      <name>aws_robomaker_warehouse_TrashCanC_01_120</name>
+      <pose>20.052500 -13.909500 0.001223 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_121</name>
+      <pose>20.237000 -12.389500 0.022323 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_122</name>
+      <pose>20.067000 -9.650000 0.004923 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_123</name>
+      <pose>20.066000 -6.713500 0.034223 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_TrashCanC_01</uri>
+      <name>aws_robomaker_warehouse_TrashCanC_01_124</name>
+      <pose>20.052500 -4.996500 0.001223 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_125</name>
+      <pose>20.237000 -3.476500 0.022323 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_126</name>
+      <pose>20.067000 -0.737000 0.004923 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_127</name>
+      <pose>20.066000 2.199500 0.034223 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_128</name>
+      <pose>20.066000 14.053500 0.034223 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_129</name>
+      <pose>20.237000 15.611500 0.022323 0 0 1.570796</pose>
+    </include>
+    <!-- ==== end east wall ==== -->
+
+    <!-- ==== west wall: 9 object(s) : corner jacks plus a run down the long west wall ==== -->
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_130</name>
+      <pose>-19.955500 19.379000 0.022323 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_131</name>
+      <pose>-19.955500 20.119000 0.022323 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_132</name>
+      <pose>-20.096000 -18.563000 0.004923 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01_133</name>
+      <pose>-20.095000 -15.626500 0.034223 0 0 0.000000</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_TrashCanC_01</uri>
+      <name>aws_robomaker_warehouse_TrashCanC_01_134</name>
+      <pose>-20.081500 -13.909500 0.001223 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_135</name>
+      <pose>-20.266000 -12.389500 0.022323 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_136</name>
+      <pose>-20.266000 -3.476500 0.022323 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_137</name>
+      <pose>-20.266000 5.436500 0.022323 0 0 1.570796</pose>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_138</name>
+      <pose>-20.266000 14.349500 0.022323 0 0 1.570796</pose>
+    </include>
+    <!-- ==== end west wall ==== -->
+
+    <!-- ===== END near-wall objects ===== -->
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_400</name>
+      <pose>-18.263200 -14.985519 -0.298777 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>7.000</dwell_home>
+        <phase>3.000</phase>
+        <waypoints>
+          <waypoint>-18.263200 -14.985519</waypoint>
+          <waypoint>-18.452200 8.768900</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_401</name>
+      <pose>-18.263200 -18.460106 -0.298777 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>7.000</dwell_home>
+        <phase>3.000</phase>
+        <waypoints>
+          <waypoint>-18.263200 -18.460106</waypoint>
+          <waypoint>-18.452200 5.294313</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_402</name>
+      <pose>-14.512800 -18.460106 0.029223 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>7.000</dwell_home>
+        <phase>3.000</phase>
+        <waypoints>
+          <waypoint>-14.512800 -18.460106</waypoint>
+          <waypoint>-14.701800 5.294313</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_403</name>
+      <pose>-14.512800 -14.985519 0.004223 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>7.000</dwell_home>
+        <phase>3.000</phase>
+        <waypoints>
+          <waypoint>-14.512800 -14.985519</waypoint>
+          <waypoint>-14.701800 8.768900</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_404</name>
+      <pose>-14.512800 -7.303144 0.004223 0 0 1.570796</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>7.000</dwell_far>
+        <dwell_home>2.041</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>-14.512800 -7.303144</waypoint>
+          <waypoint>-14.498300 16.400775</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_405</name>
+      <pose>-18.263200 -10.777731 0.029223 0 0 1.570796</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>7.000</dwell_far>
+        <dwell_home>2.041</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>-18.263200 -10.777731</waypoint>
+          <waypoint>-18.248700 12.926188</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_406</name>
+      <pose>-14.512800 -10.777731 0.029223 0 0 1.570796</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>7.000</dwell_far>
+        <dwell_home>2.041</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>-14.512800 -10.777731</waypoint>
+          <waypoint>-14.498300 12.926188</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_407</name>
+      <pose>-18.263200 -7.303144 0.004223 0 0 1.570796</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>7.000</dwell_far>
+        <dwell_home>2.041</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>-18.263200 -7.303144</waypoint>
+          <waypoint>-18.248700 16.400775</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_408</name>
+      <pose>-7.681350 10.656794 0.029223 0 0 -1.570796</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>7.000</dwell_far>
+        <dwell_home>2.064</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>-7.681350 10.656794</waypoint>
+          <waypoint>-7.681350 -13.361562</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_409</name>
+      <pose>-2.971250 10.656794 0.004223 0 0 -1.570796</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>7.000</dwell_far>
+        <dwell_home>2.064</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>-2.971250 10.656794</waypoint>
+          <waypoint>-2.971250 -13.361562</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_410</name>
+      <pose>1.738850 10.656794 0.004223 0 0 -1.570796</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>7.000</dwell_far>
+        <dwell_home>2.064</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>1.738850 10.656794</waypoint>
+          <waypoint>1.738850 -13.361562</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_411</name>
+      <pose>-7.681350 7.133831 0.004223 0 0 -1.570796</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>7.000</dwell_far>
+        <dwell_home>2.064</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>-7.681350 7.133831</waypoint>
+          <waypoint>-7.681350 -16.884525</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_412</name>
+      <pose>1.738850 7.133831 0.004223 0 0 -1.570796</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>7.000</dwell_far>
+        <dwell_home>2.064</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>1.738850 7.133831</waypoint>
+          <waypoint>1.738850 -16.884525</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_413</name>
+      <pose>-2.971250 7.133831 0.004223 0 0 -1.570796</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>7.000</dwell_far>
+        <dwell_home>2.064</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>-2.971250 7.133831</waypoint>
+          <waypoint>-2.971250 -16.884525</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_414</name>
+      <pose>-7.681350 18.435919 0.029223 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>7.000</dwell_home>
+        <phase>3.000</phase>
+        <waypoints>
+          <waypoint>-7.681350 18.435919</waypoint>
+          <waypoint>-7.681350 -5.661937</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_415</name>
+      <pose>-2.971250 14.912956 0.004223 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>7.000</dwell_home>
+        <phase>3.000</phase>
+        <waypoints>
+          <waypoint>-2.971250 14.912956</waypoint>
+          <waypoint>-2.971250 -9.184900</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_416</name>
+      <pose>1.738850 14.912956 -0.298777 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>7.000</dwell_home>
+        <phase>3.000</phase>
+        <waypoints>
+          <waypoint>1.738850 14.912956</waypoint>
+          <waypoint>1.738850 -9.184900</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_417</name>
+      <pose>-7.681350 14.912956 0.004223 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>7.000</dwell_home>
+        <phase>3.000</phase>
+        <waypoints>
+          <waypoint>-7.681350 14.912956</waypoint>
+          <waypoint>-7.681350 -9.184900</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_418</name>
+      <pose>1.738850 18.435919 0.004223 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>7.000</dwell_home>
+        <phase>3.000</phase>
+        <waypoints>
+          <waypoint>1.738850 18.435919</waypoint>
+          <waypoint>1.738850 -5.661937</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_419</name>
+      <pose>-2.971250 18.435919 0.004223 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>7.000</dwell_home>
+        <phase>3.000</phase>
+        <waypoints>
+          <waypoint>-2.971250 18.435919</waypoint>
+          <waypoint>-2.971250 -5.661937</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_420</name>
+      <pose>17.867517 1.530221 0.004223 0 0 -1.624862</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>2.000</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>17.867517 1.530221</waypoint>
+          <waypoint>17.858280 -15.572676</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_421</name>
+      <pose>8.899983 1.530221 0.004223 0 0 -1.624862</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>2.000</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>8.899983 1.530221</waypoint>
+          <waypoint>8.890746 -15.572676</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_422</name>
+      <pose>13.383750 -2.153638 -0.298777 0 0 -1.624862</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>2.000</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>13.383750 -2.153638</waypoint>
+          <waypoint>13.374513 -19.256535</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_423</name>
+      <pose>13.383750 1.530221 0.004223 0 0 -1.624862</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>2.000</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>13.383750 1.530221</waypoint>
+          <waypoint>13.374513 -15.572676</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_424</name>
+      <pose>17.867517 -2.153638 0.004223 0 0 -1.624862</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>2.000</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>17.867517 -2.153638</waypoint>
+          <waypoint>17.858280 -19.256535</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_425</name>
+      <pose>8.899983 10.924196 -0.298777 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>2.000</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>7.594600 10.789696</waypoint>
+          <waypoint>10.583366 10.789696</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_426</name>
+      <pose>13.383750 14.608054 0.004223 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>2.000</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>12.078367 14.473554</waypoint>
+          <waypoint>15.067133 14.473554</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_427</name>
+      <pose>8.899983 14.608054 0.004223 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>2.000</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>7.594600 14.473554</waypoint>
+          <waypoint>10.583366 14.473554</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_428</name>
+      <pose>13.383750 10.924196 0.029223 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>2.000</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>12.078367 10.789696</waypoint>
+          <waypoint>15.067133 10.789696</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+    <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_429</name>
+      <pose>17.867517 10.924196 -0.298777 0 0 0.000000</pose>
+      <static>true</static>
+      <plugin filename="KinematicTrajectory"
+              name="kinematic_trajectory::KinematicTrajectory">
+        <speed>2.500</speed>
+        <loop>true</loop>
+        <dwell>2.00</dwell>
+        <dwell_far>2.000</dwell_far>
+        <dwell_home>2.000</dwell_home>
+        <phase>0.000</phase>
+        <waypoints>
+          <waypoint>16.562134 10.789696</waypoint>
+          <waypoint>19.550900 10.789696</waypoint>
+        </waypoints>
+      </plugin>
+    </include>
+
+
+
+
+
+    <!-- <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_018</name>
+      <pose>-1.491287 5.222435 -0.017477 0 0 -1.583185</pose>
+    </include> -->
+
+
+
+
+
+    <!-- <include>
+      <uri>model://aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01_031</name>
+      <pose>-1.573677 2.301994 -0.015663 0 0 -3.133191</pose>
+    </include> -->
+    
+
+
+
+
+
+    <!-- <include>
+      <uri>model://aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01_001</name>
+      <pose>-0.276098 -9.481944 0.023266 0 0 0</pose>
+    </include> -->
+
+    <!-- sphere at origin -->
+    <!-- <include>
+      <uri>model://sphere</uri>
+      <name>sphere_at_x</name>
+      <pose>1 0 8 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://sphere</uri>
+      <name>sphere_at_y</name>
+      <pose>0 1 8 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://sphere</uri>
+      <name>sphere_at_z</name>
+      <pose>0 0 8 0 0 0</pose>
+    </include> -->
+
+    <!-- ackermann_robot -->
+    <include>
+      <uri>model://ackermann_robot</uri>
+      <name>ackermann_robot_001</name>
+      <pose>5.25 20 0 0 0 -1.5708</pose>
+    </include>
+
+    <gui fullscreen="0">
+      <plugin filename="MinimalScene" name="3D View">
+        <ignition-gui>
+          <title>3D View</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </ignition-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.7 0.7 0.7</ambient_light>
+        <background_color>0.25 0.28 0.32</background_color>
+        <camera_pose>-18.000000 -18.000000 8.500000 0.000000 0.286521 0.785398</camera_pose>
+      </plugin>
+
+      <!-- Embedding <gui> in the world replaces gui.config outright rather than
+           merging with it, so every plugin the GUI needs must be listed here. -->
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="SelectEntities" name="Select Entities">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="MarkerManager" name="Marker manager">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="VisualizationCapabilities" name="Visualization Capabilities">
+        <ignition-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">floating</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="WorldControl" name="World control">
+        <ignition-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="width">121</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </ignition-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>true</start_paused>
+        <use_event>true</use_event>
+      </plugin>
+
+      <plugin filename="WorldStats" name="World stats">
+        <ignition-gui>
+          <title>World stats</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">110</property>
+          <property type="double" key="width">290</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </ignition-gui>
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+        <iterations>true</iterations>
+      </plugin>
+
+      <plugin filename="Screenshot" name="Screenshot">
+        <ignition-gui>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="double" key="height">50</property>
+          <property type="double" key="width">50</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="World control">
+            <line own="left" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="ComponentInspector" name="Component inspector">
+        <ignition-gui>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </ignition-gui>
+      </plugin>
+
+      <plugin filename="EntityTree" name="Entity tree">
+        <ignition-gui>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </ignition-gui>
+      </plugin>
+    </gui>
+
+  </world>
+</sdf>

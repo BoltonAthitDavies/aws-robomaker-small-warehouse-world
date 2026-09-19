@@ -1,0 +1,48 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+  <model name="aws_robomaker_warehouse_GroundB_01_bayline">
+    <link name="link">
+      <inertial>
+        <mass>1000</mass>
+		<!-- Solid-box inertia for the 13.98 x 20.907 x 0.124 m collision mesh.
+		     The original values violated the inertia triangle inequality, which
+		     Gazebo Classic ignored but libsdformat12 rejects outright. -->
+		<inertia>
+          <ixx>36425.342</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>16289.083</iyy>
+          <iyz>0</iyz>
+          <izz>52711.849</izz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>model://aws_robomaker_warehouse_GroundB_01_bayline/meshes/aws_robomaker_warehouse_GroundB_01_bayline_collision.DAE</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>100</mu>
+              <mu2>50</mu2>
+              <fdir1>0 0 0</fdir1>
+              <slip1>0</slip1>
+              <slip2>0</slip2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="visual">
+	    <geometry>
+          <mesh>
+            <uri>model://aws_robomaker_warehouse_GroundB_01_bayline/meshes/aws_robomaker_warehouse_GroundB_01_bayline_visual.DAE</uri>
+          </mesh>
+        </geometry>
+</visual>
+    </link>
+<static>1</static>
+  </model>
+</sdf>

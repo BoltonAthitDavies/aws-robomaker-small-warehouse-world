@@ -1209,3 +1209,140 @@ applied sixteen times or it silently does not apply. The fix is to make the
 per-world files thin wrappers that `IncludeLaunchDescription` the base with a
 different `world` default — the nav2 and localization launchers already work that
 way, which is why they needed no patch here.
+
+---
+
+## 26. The viewer labelled wheel odometry as VINS (2026-09-17)
+
+With VINS not running at all, the viewer showed **`VINS err 0.567 m`** and drew an
+orange trail. The trail was `/model/ackermann_robot_001/odometry` — the
+AckermannSteering dead reckoning bridged in §23.
+
+`_find_odom()` tries each estimator's preferred topics and then falls back to
+**any** `nav_msgs/Odometry` topic on the graph. Its skip set was only
+`{gt_topic, '/odom', '/odometry_filtered'}`, so the wheel odometry was eligible,
+adopted, drawn, and **scored** — producing an error figure for an estimator that
+was never launched. Nothing in the UI distinguished it from a real VINS run.
+
+This is the failure mode predicted when the bridge was added, and it took one
+session to arrive.
+
+Two changes:
+
+**A never-an-estimate filter.** `/model/<name>/odometry`,
+`/model/<name>/odometry_with_covariance`, and anything containing `wheel_odom` are
+excluded from the fallback. These are simulator dead reckoning by construction.
+
+**The fallback now warns.** It was logged at INFO in the same words as an explicit
+topic, so the guess and the certainty were indistinguishable in the console. It
+now says which preferred topics were empty, what it adopted instead, and which
+`--<key>-topic` flag to pass if that is wrong.
+
+A regex detail worth keeping: the pattern is applied with `.search()`, not
+`.match()`. The first version used `.match()`, which anchors at position 0, so the
+`wheel_odom` alternative could never fire inside a namespaced name — a check
+against `/robot/wheel_odometry` showed it still "eligible".
+
+**The first verification of this was worthless, and that is worth recording.**
+The check was "start the viewer, grep the log for an adoption message, find none".
+It found none because `NOT_AN_ESTIMATE` was added at module scope while `re` was
+never imported in `viewer.py` at all — the viewer died with `NameError` before it
+reached any estimator code. An absence-of-output test passes just as happily when
+the program never ran. The test now asserts the viewer actually started (its
+`[viewer]` banner lines) before drawing any conclusion from what is missing.
+
+Verified properly, both directions:
+
+| graph | result |
+|---|---|
+| only `/model/ackermann_robot_001/odometry` | viewer starts (117 obstacle footprints), **adopts nothing** |
+| that plus `/vins_estimator/odometry` | `VINS topic: /vins_estimator/odometry` — real estimators still resolve |
+
+**For the report:** any VINS or ORB-SLAM3 number recorded from the viewer while a
+wheel-odometry topic was live needs re-checking. `--vins-topic ""` disables an
+overlay outright, and passing the topic explicitly removes all guessing.
+
+### 26b. A dedicated ODOM overlay
+
+Excluding wheel odometry from auto-adoption (§26) left no way to *look* at it.
+Pinning it with `--vins-topic` would have worked and would have relabelled it
+VINS, recreating the exact confusion just removed.
+
+`viewer.py` gained a third overlay instead — same machinery, its own identity:
+
+```
+--wheel-odom-topic /model/ackermann_robot_001/odometry
+```
+
+| | |
+|---|---|
+| key / label | `odom` / **ODOM** |
+| colour | `#8d99ae` grey, dash-dot — visually not a result |
+| default | **empty, i.e. off** |
+
+No `'auto'` mode for this one, deliberately. Guessing a wheel-odometry topic is
+precisely what produced a VINS error figure with VINS not running; naming it is
+the point.
+
+It still gets the rigid fit to ground truth and an error figure, which is the
+useful part: the panel's ODOM row is then dead-reckoning drift against truth,
+labelled as such. Verified both ways — with the topic live and no flag, zero
+overlays resolve; with the flag, `ODOM topic: /model/ackermann_robot_001/odometry`.
+
+---
+
+## 27. The `*_bayline` worlds: bay outlines on a blank floor (2026-09-18)
+
+Eight worlds carrying `bayline` in their name were byte-identical copies of their
+`_nofloortexture` twins, i.e. the completely blank `GroundB_01_plain` floor. They
+now use a third ground model, **`aws_robomaker_warehouse_GroundB_01_bayline`**:
+flat concrete, bay outlines, no walkway lines.
+
+That completes a three-point floor ablation:
+
+| model | concrete | bay outlines | walkway lines |
+|---|---|---|---|
+| `GroundB_01` | 1024² texture | yes | yes |
+| `GroundB_01_bayline` | flat colour | **yes (112 faces)** | no |
+| `GroundB_01_plain` | flat colour | no | no |
+
+### Why this needed new machinery
+
+All 154 painted faces are **one `<triangles>` element sharing one material**, so
+keeping the bay outlines while dropping the walkway lines is not a matter of
+deleting an element. It means rewriting the `<p>` index list face by face, judging
+each face by the atlas band its UV centroid falls in. The split is exactly clean:
+
+```
+hazard  112 faces   the bay OUTLINES
+green    42 faces   the walkway lines
+```
+
+`make_plain_floor.py` gained `--keep hazard` for this (and `--keep` accepts any
+comma-separated band list).
+
+**The failure this had to avoid is a stale `count` attribute.** COLLADA readers
+trust it, and a count longer than the rewritten `<p>` walks off the end of the
+array. Verified explicitly rather than by "it loaded": `len(p) == count * 3 *
+stride` for both batches (108/108 and 1008/1008), and the largest vertex and UV
+indices stay inside their arrays (283 < 284, 123 < 164).
+
+**The atlas has to travel with the model.** Unlike `_plain`, which drops every
+image, the surviving stripes still reference `GroundB_02.png` — and a `model://`
+mesh resolves `<init_from>` relative to **its own** directory. The generator copies
+the atlas into `models/..._bayline/materials/textures/`. Confirmed at load: zero
+mentions of `GroundB_02` in the error stream, so the stripes resolve. The
+concrete's own image is dropped, being unreferenced once the diffuse is flat.
+
+### State
+
+All 8 parse and load headless with only the known orphan `DeskC` texture error.
+Collision geometry is untouched, so **the existing maps still apply**: baking
+`_01_bayline` and `_02_bayline` produced files byte-identical to
+`maps/baked_static_01` and `_02`. No new maps needed. Rebuilt with
+`--symlink-install`.
+
+**Loose end:** two of the bayline launch files are named `*_bayline.py` rather than
+`*_bayline.launch.py` (`small_warehouse_static_01_bayline.py`,
+`small_warehouse_static_02_bayline.py`). `ros2 launch` accepts either, but the
+inconsistency is the kind that makes a later glob miss them.
