@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+  <model name="aws_robomaker_warehouse_WallB_01_docks_i">
+    <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <geometry><mesh><uri>model://aws_robomaker_warehouse_WallB_01_docks_i/meshes/aws_robomaker_warehouse_WallB_01_docks_i_collision.DAE</uri></mesh></geometry>
+      </collision>
+      <visual name="visual">
+        <geometry><mesh><uri>model://aws_robomaker_warehouse_WallB_01_docks_i/meshes/aws_robomaker_warehouse_WallB_01_docks_i_visual.DAE</uri></mesh></geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>
