@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <!-- A person who walks 4 m and back. The realistic worlds do not include this
+       file; they write their own <actor> elements with the same skin and clips
+       (script/make_realistic_world.py), so that the routes are checked against
+       the layout. This example is for trying the asset on its own. -->
+  <actor name="aws_robomaker_warehouse_Person_01">
+    <pose>0 0 1.0 0 0 0</pose>
+    <skin>
+      <filename>model://aws_robomaker_warehouse_Person_01/meshes/walk.dae</filename>
+      <scale>1.0</scale>
+    </skin>
+    <animation name="walk">
+      <filename>model://aws_robomaker_warehouse_Person_01/meshes/walk.dae</filename>
+      <scale>1.0</scale>
+      <interpolate_x>true</interpolate_x>
+    </animation>
+    <animation name="stand">
+      <filename>model://aws_robomaker_warehouse_Person_01/meshes/stand.dae</filename>
+      <scale>1.0</scale>
+      <interpolate_x>true</interpolate_x>
+    </animation>
+    <script>
+      <loop>true</loop>
+      <delay_start>0.0</delay_start>
+      <auto_start>true</auto_start>
+      <trajectory id="0" type="walk">
+        <waypoint><time>0.0</time><pose>0 0 1.0 0 0 0</pose></waypoint>
+        <waypoint><time>3.3</time><pose>4 0 1.0 0 0 0</pose></waypoint>
+        <waypoint><time>3.8</time><pose>4 0 1.0 0 0 3.14159</pose></waypoint>
+        <waypoint><time>7.1</time><pose>0 0 1.0 0 0 3.14159</pose></waypoint>
+        <waypoint><time>7.6</time><pose>0 0 1.0 0 0 0</pose></waypoint>
+      </trajectory>
+    </script>
+  </actor>
+</sdf>

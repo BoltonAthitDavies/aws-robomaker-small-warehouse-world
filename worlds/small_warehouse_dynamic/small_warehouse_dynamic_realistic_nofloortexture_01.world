@@ -998,6 +998,308 @@
     </include>
     <!-- ===== END layout ===== -->
 
+    <!-- ==== people : 4 walking actor(s) on checked routes (no collision) ==== -->
+    <!-- H1: order picker, storage aisle x -6.54 -->
+    <actor name="person_H1">
+      <skin>
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+      <animation name="walk">
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <animation name="stand">
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/stand.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <script>
+        <loop>true</loop>
+        <delay_start>0.0</delay_start>
+        <auto_start>true</auto_start>
+        <trajectory id="0" type="walk">
+          <waypoint><time>0.00</time><pose>-6.540 8.700 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-6.540 8.700 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>2.23</time><pose>-6.540 6.800 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>3.95</time><pose>-6.540 4.900 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>5.68</time><pose>-6.540 3.000 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>6.18</time><pose>-6.540 3.000 1.00 0 0 3.1416</pose></waypoint>
+        </trajectory>
+        <trajectory id="1" type="stand">
+          <waypoint><time>0.00</time><pose>-6.540 3.000 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>6.00</time><pose>-6.540 3.000 1.00 0 0 3.1416</pose></waypoint>
+        </trajectory>
+        <trajectory id="2" type="walk">
+          <waypoint><time>0.00</time><pose>-6.540 3.000 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-6.540 3.000 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>2.32</time><pose>-6.540 1.000 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>4.14</time><pose>-6.540 -1.000 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>5.95</time><pose>-6.540 -3.000 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>7.77</time><pose>-6.540 -5.000 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>8.27</time><pose>-6.540 -5.000 1.00 0 0 0.0000</pose></waypoint>
+        </trajectory>
+        <trajectory id="3" type="stand">
+          <waypoint><time>0.00</time><pose>-6.540 -5.000 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>6.00</time><pose>-6.540 -5.000 1.00 0 0 0.0000</pose></waypoint>
+        </trajectory>
+        <trajectory id="4" type="walk">
+          <waypoint><time>0.00</time><pose>-6.540 -5.000 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-6.540 -5.000 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>2.77</time><pose>-6.540 -7.500 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="5" type="stand">
+          <waypoint><time>0.00</time><pose>-6.540 -7.500 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>3.00</time><pose>-6.540 -7.500 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="6" type="walk">
+          <waypoint><time>0.00</time><pose>-6.540 -7.500 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-6.540 -7.500 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>2.20</time><pose>-6.540 -5.625 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>3.91</time><pose>-6.540 -3.750 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>5.61</time><pose>-6.540 -1.875 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>7.32</time><pose>-6.540 0.000 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>7.82</time><pose>-6.540 0.000 1.00 0 0 3.1416</pose></waypoint>
+        </trajectory>
+        <trajectory id="7" type="stand">
+          <waypoint><time>0.00</time><pose>-6.540 0.000 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>6.00</time><pose>-6.540 0.000 1.00 0 0 3.1416</pose></waypoint>
+        </trajectory>
+        <trajectory id="8" type="walk">
+          <waypoint><time>0.00</time><pose>-6.540 0.000 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-6.540 0.000 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>2.48</time><pose>-6.540 2.175 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>4.45</time><pose>-6.540 4.350 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>6.43</time><pose>-6.540 6.525 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>8.41</time><pose>-6.540 8.700 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>8.91</time><pose>-6.540 8.700 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+      </script>
+    </actor>
+    <!-- H2: order picker, storage aisle x -1.98 -->
+    <actor name="person_H2">
+      <skin>
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+      <animation name="walk">
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <animation name="stand">
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/stand.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <script>
+        <loop>true</loop>
+        <delay_start>21.0</delay_start>
+        <auto_start>true</auto_start>
+        <trajectory id="0" type="walk">
+          <waypoint><time>0.00</time><pose>-1.980 8.700 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-1.980 8.700 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>2.25</time><pose>-1.980 6.775 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>4.00</time><pose>-1.980 4.850 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>5.75</time><pose>-1.980 2.925 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>7.50</time><pose>-1.980 1.000 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>8.00</time><pose>-1.980 1.000 1.00 0 0 0.0000</pose></waypoint>
+        </trajectory>
+        <trajectory id="1" type="stand">
+          <waypoint><time>0.00</time><pose>-1.980 1.000 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>6.00</time><pose>-1.980 1.000 1.00 0 0 0.0000</pose></waypoint>
+        </trajectory>
+        <trajectory id="2" type="walk">
+          <waypoint><time>0.00</time><pose>-1.980 1.000 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-1.980 1.000 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>2.20</time><pose>-1.980 -0.875 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>3.91</time><pose>-1.980 -2.750 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>5.61</time><pose>-1.980 -4.625 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>7.32</time><pose>-1.980 -6.500 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>7.82</time><pose>-1.980 -6.500 1.00 0 0 3.1416</pose></waypoint>
+        </trajectory>
+        <trajectory id="3" type="stand">
+          <waypoint><time>0.00</time><pose>-1.980 -6.500 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>6.00</time><pose>-1.980 -6.500 1.00 0 0 3.1416</pose></waypoint>
+        </trajectory>
+        <trajectory id="4" type="walk">
+          <waypoint><time>0.00</time><pose>-1.980 -6.500 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-1.980 -6.500 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>1.23</time><pose>-1.980 -7.300 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="5" type="stand">
+          <waypoint><time>0.00</time><pose>-1.980 -7.300 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>3.00</time><pose>-1.980 -7.300 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="6" type="walk">
+          <waypoint><time>0.00</time><pose>-1.980 -7.300 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-1.980 -7.300 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>2.45</time><pose>-1.980 -5.150 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>4.41</time><pose>-1.980 -3.000 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>4.91</time><pose>-1.980 -3.000 1.00 0 0 0.0000</pose></waypoint>
+        </trajectory>
+        <trajectory id="7" type="stand">
+          <waypoint><time>0.00</time><pose>-1.980 -3.000 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>6.00</time><pose>-1.980 -3.000 1.00 0 0 0.0000</pose></waypoint>
+        </trajectory>
+        <trajectory id="8" type="walk">
+          <waypoint><time>0.00</time><pose>-1.980 -3.000 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-1.980 -3.000 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>2.27</time><pose>-1.980 -1.050 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>4.05</time><pose>-1.980 0.900 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>5.82</time><pose>-1.980 2.850 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>7.59</time><pose>-1.980 4.800 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>9.36</time><pose>-1.980 6.750 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>11.14</time><pose>-1.980 8.700 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>11.64</time><pose>-1.980 8.700 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+      </script>
+    </actor>
+    <!-- H3: receiving checker, west receiving rows -->
+    <actor name="person_H3">
+      <skin>
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+      <animation name="walk">
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <animation name="stand">
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/stand.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <script>
+        <loop>true</loop>
+        <delay_start>8.0</delay_start>
+        <auto_start>true</auto_start>
+        <trajectory id="0" type="stand">
+          <waypoint><time>0.00</time><pose>-16.500 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>4.00</time><pose>-16.500 15.400 1.00 0 0 0.0000</pose></waypoint>
+        </trajectory>
+        <trajectory id="1" type="walk">
+          <waypoint><time>0.00</time><pose>-16.500 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>2.33</time><pose>-13.700 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>2.83</time><pose>-13.700 15.400 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="2" type="stand">
+          <waypoint><time>0.00</time><pose>-13.700 15.400 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>5.00</time><pose>-13.700 15.400 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="3" type="walk">
+          <waypoint><time>0.00</time><pose>-13.700 15.400 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-13.700 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>2.12</time><pose>-11.750 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>3.75</time><pose>-9.800 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>5.38</time><pose>-7.850 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>7.00</time><pose>-5.900 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>7.50</time><pose>-5.900 15.400 1.00 0 0 1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="4" type="stand">
+          <waypoint><time>0.00</time><pose>-5.900 15.400 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>5.00</time><pose>-5.900 15.400 1.00 0 0 1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="5" type="walk">
+          <waypoint><time>0.00</time><pose>-5.900 15.400 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-5.900 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>2.92</time><pose>-3.000 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>3.42</time><pose>-3.000 15.400 1.00 0 0 3.1416</pose></waypoint>
+        </trajectory>
+        <trajectory id="6" type="stand">
+          <waypoint><time>0.00</time><pose>-3.000 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>3.00</time><pose>-3.000 15.400 1.00 0 0 3.1416</pose></waypoint>
+        </trajectory>
+        <trajectory id="7" type="walk">
+          <waypoint><time>0.00</time><pose>-3.000 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>1.89</time><pose>-5.267 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>3.78</time><pose>-7.533 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>5.67</time><pose>-9.800 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>6.17</time><pose>-9.800 15.400 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="8" type="stand">
+          <waypoint><time>0.00</time><pose>-9.800 15.400 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>5.00</time><pose>-9.800 15.400 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="9" type="walk">
+          <waypoint><time>0.00</time><pose>-9.800 15.400 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>0.50</time><pose>-9.800 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>2.36</time><pose>-12.033 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>4.22</time><pose>-14.267 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>6.08</time><pose>-16.500 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>6.58</time><pose>-16.500 15.400 1.00 0 0 0.0000</pose></waypoint>
+        </trajectory>
+      </script>
+    </actor>
+    <!-- H4: receiving checker, east receiving rows -->
+    <actor name="person_H4">
+      <skin>
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+      <animation name="walk">
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <animation name="stand">
+        <filename>model://aws_robomaker_warehouse_Person_01/meshes/stand.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <script>
+        <loop>true</loop>
+        <delay_start>14.0</delay_start>
+        <auto_start>true</auto_start>
+        <trajectory id="0" type="stand">
+          <waypoint><time>0.00</time><pose>8.000 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>3.00</time><pose>8.000 15.400 1.00 0 0 0.0000</pose></waypoint>
+        </trajectory>
+        <trajectory id="1" type="walk">
+          <waypoint><time>0.00</time><pose>8.000 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>2.04</time><pose>10.450 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>4.08</time><pose>12.900 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>4.58</time><pose>12.900 15.400 1.00 0 0 1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="2" type="stand">
+          <waypoint><time>0.00</time><pose>12.900 15.400 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>5.00</time><pose>12.900 15.400 1.00 0 0 1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="3" type="walk">
+          <waypoint><time>0.00</time><pose>12.900 15.400 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>0.50</time><pose>12.900 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>2.54</time><pose>15.350 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>4.58</time><pose>17.800 15.400 1.00 0 0 0.0000</pose></waypoint>
+          <waypoint><time>5.08</time><pose>17.800 15.400 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="4" type="stand">
+          <waypoint><time>0.00</time><pose>17.800 15.400 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>4.00</time><pose>17.800 15.400 1.00 0 0 -1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="5" type="walk">
+          <waypoint><time>0.00</time><pose>17.800 15.400 1.00 0 0 -1.5708</pose></waypoint>
+          <waypoint><time>0.50</time><pose>17.800 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>2.33</time><pose>15.600 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>4.17</time><pose>13.400 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>6.00</time><pose>11.200 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>7.83</time><pose>9.000 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>8.33</time><pose>9.000 15.400 1.00 0 0 1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="6" type="stand">
+          <waypoint><time>0.00</time><pose>9.000 15.400 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>5.00</time><pose>9.000 15.400 1.00 0 0 1.5708</pose></waypoint>
+        </trajectory>
+        <trajectory id="7" type="walk">
+          <waypoint><time>0.00</time><pose>9.000 15.400 1.00 0 0 1.5708</pose></waypoint>
+          <waypoint><time>0.50</time><pose>9.000 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>1.33</time><pose>8.000 15.400 1.00 0 0 3.1416</pose></waypoint>
+          <waypoint><time>1.83</time><pose>8.000 15.400 1.00 0 0 0.0000</pose></waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
     <!-- ackermann_robot -->
     <include>
       <uri>model://ackermann_robot</uri>
