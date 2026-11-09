@@ -76,9 +76,13 @@
          IGN_GAZEBO_RESOURCE_PATH.
 
          For that URI to resolve, the package share directory itself must be on
-         the resource path; small_warehouse_static_tinymap.launch.py puts it
-         there. Launching this world with plain `gz sim` will not find the
-         models unless you export the path yourself:
+         the resource path. That used to be the job of a per-world launch file,
+         small_warehouse_static_tinymap.launch.py; when the per-world launch
+         files were retired in favour of `small_warehouse.launch.py world:=...`
+         the requirement lost its only provider and this world failed to load
+         with 22 "Unable to find uri" errors. It is now in the package's
+         env-hook (env-hooks/aws_robomaker_small_warehouse_world.dsv.in), so
+         any launch file works. Outside a sourced workspace, export it:
              export IGN_GAZEBO_RESOURCE_PATH=<pkg_share>:$IGN_GAZEBO_RESOURCE_PATH
 
          The robot below deliberately stays on `model://ackermann_robot`: it is

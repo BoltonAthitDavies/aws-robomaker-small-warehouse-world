@@ -1639,3 +1639,96 @@ and draws each person as a 0.7 m disc (filled walking, hollow standing) with
 a facing tick and its key, at `state.sim_t` (the ground-truth stamp clock);
 `--no-people` hides them. Needs no extra bridge. The same module is the
 starting point for a people ground truth for `yolo_gt.py`.
+
+### 29. Worlds flattened into one directory; the fallout (2026-11-06)
+The user moved every world into `worlds/small_warehouse/` and deleted the 26
+per-world launch files plus the three `nav2_*` copies, leaving
+`small_warehouse.launch.py` and `nav2.launch.py` driven by `world:=`. Both
+already declared and forwarded `world`, so no launch argument had to be added.
+Three things broke and are now fixed.
+
+**1. `model://model_tiny/...` stopped resolving.** The tinymap world names its
+shell as `model://model_tiny/<model>` so it cannot pick up the RESCALED large
+meshes in `models/` (verified: `model_tiny` WallB is 13.98 x 20.91 m,
+`models` WallB is 42.09 x 41.81 m). gz joins the whole suffix after
+`model://` onto each resource-path entry, so that URI needs the PACKAGE SHARE
+DIR itself on the path. The env-hook only had `models/`, `worlds/` and
+`share`. The deleted `small_warehouse_static_tinymap.launch.py` supplied it
+through a `_resource_path_actions()` helper, so deleting that file broke the
+world: 22 "Unable to find uri" errors and an empty scene. Fixed properly in
+`env-hooks/aws_robomaker_small_warehouse_world.dsv.in` (two new lines, IGN and
+GZ), so it holds for every launch file. Verified 0 unresolved URIs on tinymap
+and both realistic worlds.
+
+**2. Scripts still pointed at the retired layout.** `eval_realistic_maps.py`,
+`exp4_insights.py` (Exp 4 scoring), `fill_bays.py`, `make_dynamic.py`,
+`reshuffle_bays.py` and `make_realistic_world.py` all built paths from
+`worlds/small_warehouse_{dynamic,static}/`. The generator would have RECREATED
+the old directory on its next write. All repointed at `worlds/small_warehouse/`
+and every constant verified to resolve.
+
+**3. Stale `--symlink-install` output.** colcon never removes install artifacts
+for deleted sources, so the install tree kept 29 dangling world symlinks and
+32 dangling launch symlinks, plus 24 orphan `.pyc`. A dangling symlink makes gz
+come up with an EMPTY world instead of reporting a missing file, which is how
+"the viewer shows people but Gazebo shows nothing" happened: the viewer was
+given the source path directly, gz got a dead symlink. Cleared with
+`find <install share> -xtype l -delete` and a rebuild.
+
+**Lesson.** After moving or deleting anything in a `--symlink-install`
+package, `find install/<pkg> -xtype l` is the check; a dangling world symlink
+fails silently and looks like a content problem, not a path problem.
+
+## Table 3.17 audit: the pallet-jack count, and generator drift (7 Nov 2026)
+
+Prompted by "does the U world have 18 pallets?" and then "table 3.17 says 9 pallet
+jacks but I see 10".
+
+**The 18 was never pallets.** It is the Picking zone's object count, and those 18
+objects are shelving: 9 ShelfD + 9 ShelfE in three double rack rows. Both layouts
+hold 18 there. There is NO pallet mesh anywhere in these worlds; the only model
+with "pallet" in its name is PalletJackB_01, a vehicle. Where the prose says
+"pallet loads" it means ClutteringA/C standing in for them, because the AWS model
+set ships no pallet.
+
+**The 9 was a real defect in the table, now fixed.** Both layouts hold TEN pallet
+jacks: 4 traffic carriers, 4 parked at MHE charging, 1 in receiving staging, 1 in
+dispatch staging. The MHE charging row's contents cell read "parked pallet jacks,
+bin" for both columns, but the I layout has no bin there (U has 4 TrashCanC
+including one at charging; I has 3, none at charging). A reader subtracting a bin
+from the I column's 4 gets 3 jacks and a total of 9. The cell now says the bin is
+in the U layout only.
+
+**Every count in the table is correct against the committed world files:**
+
+| | objects | docks/yard | inside | jacks | bins |
+|---|---|---|---|---|---|
+| U world file | 126 | 8 | 118 | 10 | 4 |
+| I world file | 121 | 13 | 108 | 10 | 3 |
+| table 3.17 | 126 / 121 | 8 / 13 | 118 / 108 | -- | -- |
+
+Exclude `WallB_01_docks_i` (and the U world's `WallB_01_docks`), roof, ground and
+the robot from "objects" or the I total reads 122 instead of 121.
+
+**GENERATOR DRIFT, and this is the finding to carry forward.**
+`script/make_realistic_world.py` reproduces the U world exactly, model for model.
+It no longer reproduces the I world:
+
+| model | in the committed I world | current generator |
+|---|---|---|
+| DockDoor_01 | 5 | 3 |
+| DockDoorOpen_01 | 3 | 2 |
+| DockYard_01 | 2 | 1 |
+| Trailer_01 | 3 | 2 |
+| ClutteringA_01 | 16 | 17 |
+| ClutteringC_01 | 11 | 12 |
+
+So the generator would now emit 8 dock-line items instead of 13 and two more
+clutter instances, giving 118 objects where the recorded world has 121. The
+generator also puts 8 objects in the I block-storage zone where the table (and the
+world) have 6. The table's caption used to say the counts came "from the
+generator's tables"; it now says they come from the generated world files, which
+are the recorded environment. **Do not regenerate the I world while any result
+depends on the current recordings** -- regenerating it would change the
+environment the realistic_001/003 bags and the I maps were made in. Count from the
+`.world` file, never from the script, for anything the report quotes.

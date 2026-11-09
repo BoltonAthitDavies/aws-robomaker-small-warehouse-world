@@ -179,6 +179,19 @@ def launch_setup(context, *args, **kwargs):
             'optimize_max_error': LaunchConfiguration('optimize_max_error'),
             'rviz': 'false',          # the composing launch file owns RViz
             'output_path': '',
+            # MUST be pinned empty, because the three frames above are set
+            # explicitly and rtabmap.launch.py's contract is "explicit
+            # odom_frame/body_frame win when frontend is empty".
+            #
+            # Without this, launch configuration inheritance hands the child OUR
+            # `frontend`, and the two files spell the front ends differently: this
+            # file validates vins|orbslam3, rtabmap.launch.py validates orb|vins.
+            # So frontend:=orbslam3 aborted the whole launch with
+            #     frontend must be orb|vins (or empty), got 'orbslam3'
+            # The default 'vins' hid this for a year: it happens to be a value the
+            # child also accepts, so only the ORB path ever broke. Found 6 Nov 2026
+            # via vslam_navigation localize_sim.launch.py.
+            'frontend': '',
         }.items())
 
     if not _truthy(context, 'start_frontend'):
