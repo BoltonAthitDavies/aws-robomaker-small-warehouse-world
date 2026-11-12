@@ -162,7 +162,28 @@ def launch_setup(context, *args, **kwargs):
                              LaunchConfiguration('image_transport'),
                          'publish_tf': True,
                          'world_frame_id': 'odom',
-                         'body_frame_id': 'vio_body'}])
+                         'body_frame_id': 'vio_body',
+                         # Hold every pose back until the inertial state is
+                         # valid. Measured 11 Nov 2026: with this false, the
+                         # front end publishes an orientation that is still
+                         # provisional, RTAB-Map localises against it and
+                         # LATCHES a wrong map->odom correction -- 74 deg of
+                         # yaw error in one run, frozen for 34 s, which walked
+                         # the pose 22 m outside the building before a correct
+                         # localisation finally replaced it (28 m snap back).
+                         # Nothing downstream can undo a bad correction; the
+                         # only cure is to not produce one.
+                         #
+                         # The signal is Frame::HasVelocity(). The header note
+                         # on SlamConfig::wait_for_imu_init records one bag
+                         # where it never fired, which would mean NO poses at
+                         # all rather than late ones, so it stays switchable.
+                         'wait_for_imu_init': _truthy(context, 'wait_for_imu_init'),
+                         # Empty = no trajectory written. Set it to get vio.csv,
+                         # whose imu_initialized column is how the timing above
+                         # is checked rather than inferred.
+                         'output_path': LaunchConfiguration('orb_output_path'),
+                         }])
 
     rtab = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(rtab_sim),
@@ -288,6 +309,16 @@ def generate_launch_description():
                         'larger correction to close a lap, and at 3.0 every '
                         'closure VINS proposed on dataset_static_tiny_repeat was '
                         'rejected (36 detected, 0 accepted).'),
+        DeclareLaunchArgument(
+            'wait_for_imu_init', default_value='false',
+            description='orbslam3 only. true holds poses back until the inertial '
+                        'state is valid, so no map->odom correction can be latched '
+                        'from a provisional orientation. Default false preserves '
+                        "this file's previous behaviour."),
+        DeclareLaunchArgument(
+            'orb_output_path', default_value='',
+            description="directory for the front end's vio.csv (imu_initialized "
+                        'column); empty writes nothing.'),
         DeclareLaunchArgument('detection_rate', default_value='1.0'),
         DeclareLaunchArgument('shim_rate', default_value='4.0'),
         DeclareLaunchArgument(

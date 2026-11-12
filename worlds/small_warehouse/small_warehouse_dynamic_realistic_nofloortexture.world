@@ -1343,7 +1343,7 @@
     <include>
       <uri>model://ackermann_robot</uri>
       <name>ackermann_robot_001</name>
-      <pose>5.25 20 0 0 0 -1.5708</pose>
+      <pose>13.0 14.0 0 0 0 -1.5708</pose>
     </include>
 
     <gui fullscreen="0">
